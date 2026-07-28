@@ -4,17 +4,17 @@ contextBridge.exposeInMainWorld('api', {
   getStocks: () => ipcRenderer.invoke('get-stocks'),
   getSectors: () => ipcRenderer.invoke('get-sectors'),
   getStats: () => ipcRenderer.invoke('get-stats'),
-  testConnection: () => ipcRenderer.invoke('test-connection'),
 
-  fetchAllStocks: () => ipcRenderer.invoke('fetch-all-stocks'),
-  fetchStockData: (params) => ipcRenderer.invoke('fetch-stock-data', params),
+  saveStocks: (stocks) => ipcRenderer.invoke('save-stocks', stocks),
+  savePriceHistory: (params) => ipcRenderer.invoke('save-price-history', params),
+  saveClientType: (params) => ipcRenderer.invoke('save-client-type', params),
+  saveShareholders: (params) => ipcRenderer.invoke('save-shareholders', params),
 
   getPriceHistory: (params) => ipcRenderer.invoke('get-price-history', params),
   getClientType: (params) => ipcRenderer.invoke('get-client-type-local', params),
   getShareholders: (params) => ipcRenderer.invoke('get-shareholders-local', params),
 
   exportCSV: (params) => ipcRenderer.invoke('export-csv', params),
-  exportExcel: (params) => ipcRenderer.invoke('export-excel', params),
   exportExcelMulti: (params) => ipcRenderer.invoke('export-excel-multi', params),
 
   onProgress: (cb) => ipcRenderer.on('fetch-progress', (e, data) => cb(data)),
