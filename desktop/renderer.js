@@ -37,6 +37,26 @@ async function updateStats() {
   document.getElementById('statShareholders').textContent = s.shareholders;
 }
 
+// ========== Test Connection ==========
+async function testConnection() {
+  const btn = document.getElementById('btnTest');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ در حال تست...';
+  try {
+    const r = await window.api.testConnection();
+    if (r.success) {
+      alert('✅ اتصال برقرار است!\nسرور TSETMC در دسترس می‌باشد.');
+    } else {
+      alert('❌ اتصال برقرار نشد:\n' + r.error);
+    }
+  } catch (e) {
+    alert('❌ خطا: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔌 تست اتصال';
+  }
+}
+
 // ========== Fetch from TSETMC ==========
 async function fetchAllStocks() {
   const btn = document.getElementById('btnFetchStocks');

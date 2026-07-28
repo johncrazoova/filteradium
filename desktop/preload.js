@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('api', {
   getStocks: () => ipcRenderer.invoke('get-stocks'),
   getSectors: () => ipcRenderer.invoke('get-sectors'),
   getStats: () => ipcRenderer.invoke('get-stats'),
+  testConnection: () => ipcRenderer.invoke('test-connection'),
 
   fetchAllStocks: () => ipcRenderer.invoke('fetch-all-stocks'),
   fetchStockData: (params) => ipcRenderer.invoke('fetch-stock-data', params),

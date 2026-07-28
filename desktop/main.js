@@ -97,33 +97,48 @@ const TSETMC = {
   fetch(url) {
     return new Promise((resolve, reject) => {
       const client = url.startsWith('https') ? https : http;
+      console.log('Fetching:', url);
       const req = client.get(url, { headers: this.HEADERS, timeout: 30000 }, (res) => {
+        console.log('Response status:', res.statusCode);
+        console.log('Response headers:', JSON.stringify(res.headers));
         let data = '';
         res.on('data', chunk => data += chunk);
         res.on('end', () => {
+          console.log('Response length:', data.length);
+          console.log('Response preview:', data.substring(0, 200));
           if (!data || data.trim() === '') {
-            reject(new Error('پاسخ خالی از سرور - اتصال به TSETMC ممکن نیست'));
+            reject(new Error(`پاسخ خالی از سرور (status: ${res.statusCode})`));
             return;
           }
           try {
             resolve(JSON.parse(data));
           } catch (e) {
-            reject(new Error('خطا در پردازش داده - اتصال به TSETMC ممکن نیست'));
+            reject(new Error(`خطا در پردازش JSON: ${data.substring(0, 100)}`));
           }
         });
       });
       req.on('error', (e) => {
-        reject(new Error('خطای شبکه - آیا به اینترنت ایران متصل هستید؟'));
+        reject(new Error(`خطای شبکه: ${e.message}`));
       });
       req.on('timeout', () => {
         req.destroy();
-        reject(new Error('زمان اتصال تمام شد - سرور در دسترس نیست'));
+        reject(new Error('زمان اتصال تمام شد (30 ثانیه)'));
       });
     });
   },
 
   async getAllStocks() {
     return this.fetch(`${this.BASE}/api/ClosingPrice/GetMarketWatch/1/0`);
+  },
+
+  // Test connection
+  async testConnection() {
+    try {
+      const data = await this.fetch(`${this.BASE}/api/MarketData/GetMarketState`);
+      return { success: true, data };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
   },
 
   async getHistory(insCode) {
@@ -156,6 +171,16 @@ ipcMain.handle('get-stats', () => {
     clientType: db.prepare('SELECT COUNT(*) as c FROM client_type').get().c,
     shareholders: db.prepare('SELECT COUNT(*) as c FROM shareholders').get().c,
   };
+});
+
+// Test connection
+ipcMain.handle('test-connection', async () => {
+  try {
+    const result = await TSETMC.testConnection();
+    return result;
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 });
 
 // Fetch all stocks from TSETMC
