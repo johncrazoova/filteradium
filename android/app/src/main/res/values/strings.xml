@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">فیلترادیوم</string>
+    <string name="loading">در حال بارگذاری...</string>
+    <string name="error_connection">خطا در اتصال به سرور</string>
+    <string name="retry">تلاش مجدد</string>
+</resources>

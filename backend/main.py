@@ -1,19 +1,27 @@
 """
-فیلترادیوم - FastAPI Server
-Main API server for the platform
+فیلترادیوم - FastAPI Server (Complete)
+Main API server with all features
 """
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from typing import Optional, List, Dict
 from pydantic import BaseModel
+from datetime import datetime
 import asyncio
 from loguru import logger
 
-from backend.api.tsetmc_client import TSETMCClient, TSETMCDataParser
+from backend.api.tsetmc_complete import TSETMCClient, TSETMCDataParser
+from backend.api.user_panel import setup_user_routes
 from backend.core.scoring import ScoringEngine, Signal, Regime
+from backend.core.indicators import TechnicalIndicators
+from backend.core.backtest import BacktestEngine, StrategyType, StrategyLibrary
+from backend.models.database import (
+    Stock, PriceHistory, Shareholder, ClientTypeHistory,
+    ScoreHistory, init_db, SessionLocal
+)
 
 
 # Pydantic models
@@ -47,11 +55,18 @@ class FilterRequest(BaseModel):
     limit: Optional[int] = 100
 
 
+class BacktestRequest(BaseModel):
+    ins_code: int
+    strategy: str
+    params: Optional[Dict] = None
+    days: Optional[int] = 365
+
+
 # Initialize FastAPI app
 app = FastAPI(
     title="فیلترادیوم API",
     description="پلتفرم فیلترنویسی هوشمند بورس ایران",
-    version="1.0.0"
+    version="2.0.0"
 )
 
 # CORS
@@ -67,46 +82,203 @@ app.add_middleware(
 tsetmc_client = TSETMCClient()
 data_parser = TSETMCDataParser()
 scoring_engine = ScoringEngine()
+backtest_engine = BacktestEngine()
 
+# Setup user routes
+setup_user_routes(app)
+
+# Initialize database
+init_db()
+
+
+# ============================================================
+# Root & Health
+# ============================================================
 
 @app.get("/")
 async def root():
     """Root endpoint"""
     return {
         "name": "فیلترادیوم API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "status": "running",
         "endpoints": {
             "docs": "/docs",
-            "market_watch": "/api/market",
-            "stock_score": "/api/stock/{ins_code}/score",
+            "market": "/api/market",
+            "stock": "/api/stock/{ins_code}",
+            "score": "/api/stock/{ins_code}/score",
             "filter": "/api/filter",
-            "search": "/api/search"
+            "search": "/api/search",
+            "backtest": "/api/backtest",
+            "indicators": "/api/stock/{ins_code}/indicators",
+            "auth": "/api/auth/*",
+            "filters": "/api/filters",
+            "alerts": "/api/alerts"
         }
     }
 
 
+@app.get("/health")
+async def health():
+    """Health check"""
+    db = SessionLocal()
+    stock_count = db.query(Stock).count()
+    db.close()
+    
+    return {
+        "status": "healthy",
+        "database": "connected",
+        "stocks": stock_count,
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+# ============================================================
+# Market Data Endpoints
+# ============================================================
+
 @app.get("/api/market")
 async def get_market_watch(
     market_id: int = Query(1, description="Market ID"),
-    market_type: int = Query(0, description="Market type")
+    market_type: int = Query(0, description="Market type"),
+    limit: int = Query(100, description="Limit results")
 ):
     """Get market watch data"""
     try:
+        # Try database first
+        db = SessionLocal()
+        stocks = db.query(Stock).limit(limit).all()
+        db.close()
+        
+        if stocks:
+            return {
+                "count": len(stocks),
+                "stocks": [
+                    {
+                        "ins_code": s.ins_code,
+                        "symbol": s.symbol,
+                        "name": s.name,
+                        "last_price": s.last_price,
+                        "close_price": s.close_price,
+                        "change_pct": ((s.last_price - s.yesterday_price) / s.yesterday_price * 100) if s.yesterday_price else 0,
+                        "volume": s.volume,
+                        "value": s.value,
+                        "sector": s.sector,
+                        "score": s.total_score,
+                        "signal": s.signal
+                    }
+                    for s in stocks
+                ]
+            }
+        
+        # Fallback to API
         data = await tsetmc_client.get_market_watch(market_id, market_type)
         if not data:
             raise HTTPException(status_code=404, detail="Market data not found")
         
-        stocks = []
+        stocks_data = []
         if "closingPriceAll" in data:
-            for raw_stock in data["closingPriceAll"][:100]:  # Limit to 100
+            for raw_stock in data["closingPriceAll"][:limit]:
                 parsed = data_parser.parse_stock(raw_stock)
                 if parsed:
-                    stocks.append(parsed)
+                    stocks_data.append(parsed)
         
-        return {"count": len(stocks), "stocks": stocks}
+        return {"count": len(stocks_data), "stocks": stocks_data}
     except Exception as e:
         logger.error(f"Error fetching market data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/stock/{ins_code}")
+async def get_stock(ins_code: int):
+    """Get stock details"""
+    try:
+        # Try database first
+        db = SessionLocal()
+        stock = db.query(Stock).filter(Stock.ins_code == ins_code).first()
+        
+        if stock:
+            # Get shareholders
+            shareholders = db.query(Shareholder).filter(
+                Shareholder.ins_code == ins_code
+            ).order_by(Shareholder.percentage.desc()).limit(10).all()
+            
+            # Get recent price history
+            price_history = db.query(PriceHistory).filter(
+                PriceHistory.ins_code == ins_code
+            ).order_by(PriceHistory.date.desc()).limit(30).all()
+            
+            # Get client type
+            client_type = db.query(ClientTypeHistory).filter(
+                ClientTypeHistory.ins_code == ins_code
+            ).order_by(ClientTypeHistory.date.desc()).first()
+            
+            db.close()
+            
+            return {
+                "ins_code": stock.ins_code,
+                "symbol": stock.symbol,
+                "name": stock.name,
+                "sector": stock.sector,
+                "last_price": stock.last_price,
+                "close_price": stock.close_price,
+                "first_price": stock.first_price,
+                "yesterday_price": stock.yesterday_price,
+                "high_price": stock.high_price,
+                "low_price": stock.low_price,
+                "volume": stock.volume,
+                "value": stock.value,
+                "upper_limit": stock.upper_limit,
+                "lower_limit": stock.lower_limit,
+                "eps": stock.eps,
+                "pe": stock.pe,
+                "shareholders": [
+                    {
+                        "name": sh.shareholder_name,
+                        "shares": sh.shares,
+                        "percentage": sh.percentage,
+                        "change": sh.change
+                    }
+                    for sh in shareholders
+                ],
+                "price_history": [
+                    {
+                        "date": ph.date.isoformat() if ph.date else None,
+                        "open": ph.open,
+                        "high": ph.high,
+                        "low": ph.low,
+                        "close": ph.close,
+                        "volume": ph.volume
+                    }
+                    for ph in price_history
+                ],
+                "client_type": {
+                    "individual_buy": client_type.individual_buy_volume if client_type else 0,
+                    "individual_sell": client_type.individual_sell_volume if client_type else 0,
+                    "corporate_buy": client_type.corporate_buy_volume if client_type else 0,
+                    "corporate_sell": client_type.corporate_sell_volume if client_type else 0,
+                } if client_type else None,
+                "score": {
+                    "total": stock.total_score,
+                    "signal": stock.signal,
+                    "technical": stock.technical_score,
+                    "moneyflow": stock.moneyflow_score,
+                    "risk": stock.risk_score
+                }
+            }
+        
+        db.close()
+        
+        # Fallback to API
+        data = await tsetmc_client.get_stock_data(ins_code)
+        if not data:
+            raise HTTPException(status_code=404, detail="Stock not found")
+        
+        return data
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching stock: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -114,77 +286,70 @@ async def get_market_watch(
 async def get_stock_score(ins_code: int):
     """Get stock score and analysis"""
     try:
-        # Get stock data
-        stock_data = await tsetmc_client.get_stock_data(ins_code)
+        # Try database first
+        db = SessionLocal()
+        stock = db.query(Stock).filter(Stock.ins_code == ins_code).first()
         
-        if not stock_data or not stock_data.get("price"):
-            raise HTTPException(status_code=404, detail="Stock data not found")
+        if stock and stock.total_score:
+            db.close()
+            return {
+                "ins_code": ins_code,
+                "symbol": stock.symbol,
+                "name": stock.name,
+                "price": stock.last_price,
+                "change_pct": ((stock.last_price - stock.yesterday_price) / stock.yesterday_price * 100) if stock.yesterday_price else 0,
+                "volume": stock.volume,
+                "score": {
+                    "total": stock.total_score,
+                    "signal": stock.signal,
+                    "technical": stock.technical_score,
+                    "fundamental": stock.fundamental_score,
+                    "moneyflow": stock.moneyflow_score,
+                    "risk": stock.risk_score,
+                    "momentum": stock.momentum_score,
+                    "regime": stock.regime
+                }
+            }
         
-        # Parse price data
-        price_data = stock_data["price"]
-        if "closingPrice" in price_data:
-            price_info = price_data["closingPrice"]
-        else:
-            price_info = price_data
+        db.close()
         
-        # Extract OHLCV
-        closes = [price_info.get("pClosing", 0)]
-        highs = [price_info.get("priceMax", 0)]
-        lows = [price_info.get("priceMin", 0)]
-        opens = [price_info.get("priceFirst", 0)]
-        volumes = [price_info.get("qTotTran5J", 0)]
+        # Calculate from price history
+        db = SessionLocal()
+        history = db.query(PriceHistory).filter(
+            PriceHistory.ins_code == ins_code
+        ).order_by(PriceHistory.date.desc()).limit(100).all()
+        db.close()
         
-        # Add historical data if available
-        if "closingPriceHistory" in price_data:
-            for hist in price_data["closingPriceHistory"][:50]:
-                closes.append(hist.get("pClosing", 0))
-                highs.append(hist.get("priceMax", 0))
-                lows.append(hist.get("priceMin", 0))
-                opens.append(hist.get("priceFirst", 0))
-                volumes.append(hist.get("qTotTran5J", 0))
+        if not history:
+            raise HTTPException(status_code=404, detail="No price history found")
         
-        # Parse client type
-        client_type = None
-        if stock_data.get("client_type"):
-            client_type = data_parser.parse_client_type(stock_data["client_type"])
+        closes = [h.close for h in history]
+        highs = [h.high for h in history]
+        lows = [h.low for h in history]
+        volumes = [h.volume for h in history]
         
-        # Calculate score
+        # Calculate indicators
+        ti = TechnicalIndicators(closes, highs, lows, volumes)
         result = scoring_engine.calculate_score(
-            opens=opens,
+            opens=closes,
             highs=highs,
             lows=lows,
             closes=closes,
-            volumes=volumes,
-            client_type=client_type
+            volumes=volumes
         )
-        
-        # Get instrument info
-        instrument = stock_data.get("instrument", {})
-        if instrument and "instrumentInfo" in instrument:
-            inst_info = instrument["instrumentInfo"]
-        else:
-            inst_info = instrument
         
         return {
             "ins_code": ins_code,
-            "symbol": inst_info.get("lVal18AFC", ""),
-            "name": inst_info.get("lVal18", ""),
-            "price": closes[0],
-            "change_pct": ((closes[0] - (closes[1] if len(closes) > 1 else closes[0])) / 
-                          (closes[1] if len(closes) > 1 else 1)) * 100,
-            "volume": volumes[0],
+            "price": closes[0] if closes else 0,
             "score": {
                 "total": result.total_score,
                 "signal": result.signal.value,
-                "confidence": result.confidence,
-                "regime": result.regime.value,
                 "technical": result.technical,
-                "fundamental": result.fundamental,
                 "moneyflow": result.moneyflow,
                 "risk": result.risk,
-                "momentum": result.momentum
-            },
-            "details": result.details
+                "momentum": result.momentum,
+                "regime": result.regime.value
+            }
         }
     except HTTPException:
         raise
@@ -193,60 +358,98 @@ async def get_stock_score(ins_code: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/api/stock/{ins_code}/indicators")
+async def get_stock_indicators(ins_code: int):
+    """Get all technical indicators for a stock"""
+    try:
+        db = SessionLocal()
+        history = db.query(PriceHistory).filter(
+            PriceHistory.ins_code == ins_code
+        ).order_by(PriceHistory.date.desc()).limit(100).all()
+        db.close()
+        
+        if not history:
+            raise HTTPException(status_code=404, detail="No price history found")
+        
+        closes = [h.close for h in history]
+        highs = [h.high for h in history]
+        lows = [h.low for h in history]
+        volumes = [h.volume for h in history]
+        
+        ti = TechnicalIndicators(closes, highs, lows, volumes)
+        
+        return {
+            "ins_code": ins_code,
+            "indicators": ti.all_indicators(),
+            "signals": {
+                "rsi": ti.rsi_signal().signal,
+                "macd": ti.macd_signal().signal,
+                "bollinger": ti.bollinger_signal().signal,
+                "adx": ti.adx_signal().signal,
+            },
+            "scores": {
+                "trend": ti.trend_score(),
+                "momentum": ti.momentum_score()
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error calculating indicators: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================
+# Filter Endpoints
+# ============================================================
+
 @app.post("/api/filter")
 async def apply_filter(request: FilterRequest):
     """Apply filter to all stocks"""
     try:
-        # Get market data
-        market_data = await tsetmc_client.get_market_watch()
+        db = SessionLocal()
+        query = db.query(Stock)
         
-        if not market_data or "closingPriceAll" not in market_data:
-            raise HTTPException(status_code=404, detail="Market data not found")
-        
-        results = []
-        
-        for raw_stock in market_data["closingPriceAll"][:200]:  # Limit
-            parsed = data_parser.parse_stock(raw_stock)
-            if not parsed:
-                continue
+        # Apply conditions
+        for condition in request.conditions:
+            field = condition.field
+            op = condition.operator
+            value = condition.value
             
-            # Apply filter conditions
-            passes = True
-            for condition in request.conditions:
-                value = parsed.get(condition.field, 0)
-                if condition.operator == ">":
-                    if not (value > condition.value):
-                        passes = False
-                        break
-                elif condition.operator == "<":
-                    if not (value < condition.value):
-                        passes = False
-                        break
-                elif condition.operator == ">=":
-                    if not (value >= condition.value):
-                        passes = False
-                        break
-                elif condition.operator == "<=":
-                    if not (value <= condition.value):
-                        passes = False
-                        break
-                elif condition.operator == "==":
-                    if not (value == condition.value):
-                        passes = False
-                        break
-            
-            if passes:
-                results.append(parsed)
+            if hasattr(Stock, field):
+                if op == ">":
+                    query = query.filter(getattr(Stock, field) > value)
+                elif op == "<":
+                    query = query.filter(getattr(Stock, field) < value)
+                elif op == ">=":
+                    query = query.filter(getattr(Stock, field) >= value)
+                elif op == "<=":
+                    query = query.filter(getattr(Stock, field) <= value)
+                elif op == "==":
+                    query = query.filter(getattr(Stock, field) == value)
         
-        # Sort by volume
-        results.sort(key=lambda x: x.get("volume", 0), reverse=True)
+        # Apply min score
+        if request.min_score:
+            query = query.filter(Stock.total_score >= request.min_score)
+        
+        # Get results
+        results = query.order_by(Stock.total_score.desc()).limit(request.limit).all()
+        db.close()
         
         return {
-            "count": len(results[:request.limit]),
-            "results": results[:request.limit]
+            "count": len(results),
+            "results": [
+                {
+                    "ins_code": s.ins_code,
+                    "symbol": s.symbol,
+                    "name": s.name,
+                    "last_price": s.last_price,
+                    "change_pct": ((s.last_price - s.yesterday_price) / s.yesterday_price * 100) if s.yesterday_price else 0,
+                    "volume": s.volume,
+                    "score": s.total_score,
+                    "signal": s.signal
+                }
+                for s in results
+            ]
         }
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Error applying filter: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -256,40 +459,31 @@ async def apply_filter(request: FilterRequest):
 async def search_stocks(q: str = Query(..., description="Search query")):
     """Search stocks by symbol or name"""
     try:
-        results = await tsetmc_client.search_instruments(q)
-        if not results:
-            return {"count": 0, "results": []}
+        db = SessionLocal()
+        stocks = db.query(Stock).filter(
+            (Stock.symbol.contains(q)) |
+            (Stock.name.contains(q))
+        ).limit(20).all()
+        db.close()
         
-        return {"count": len(results), "results": results}
+        return {
+            "count": len(stocks),
+            "results": [
+                {
+                    "ins_code": s.ins_code,
+                    "symbol": s.symbol,
+                    "name": s.name,
+                    "last_price": s.last_price,
+                    "sector": s.sector
+                }
+                for s in stocks
+            ]
+        }
     except Exception as e:
         logger.error(f"Error searching: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/scores/batch")
-async def get_batch_scores(ins_codes: str = Query(..., description="Comma-separated ins_codes")):
-    """Get scores for multiple stocks"""
-    try:
-        codes = [int(c.strip()) for c in ins_codes.split(",")]
-        results = []
-        
-        for code in codes[:50]:  # Limit
-            try:
-                score = await get_stock_score(code)
-                results.append(score)
-            except:
-                continue
-        
-        # Sort by total score
-        results.sort(key=lambda x: x.get("score", {}).get("total", 0), reverse=True)
-        
-        return {"count": len(results), "results": results}
-    except Exception as e:
-        logger.error(f"Error getting batch scores: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# Predefined filters
 @app.get("/api/filters/presets")
 async def get_preset_filters():
     """Get predefined filter presets"""
@@ -299,8 +493,8 @@ async def get_preset_filters():
                 "name": "مومنتوم قوی",
                 "description": "سهم‌های با رشد پیوسته و حجم بالا",
                 "conditions": [
-                    {"field": "change_pct", "operator": ">", "value": 2},
-                    {"field": "volume", "operator": ">", "value": 1000000}
+                    {"field": "volume", "operator": ">", "value": 1000000},
+                    {"field": "last_price", "operator": ">", "value": 0}
                 ]
             },
             {
@@ -308,20 +502,139 @@ async def get_preset_filters():
                 "description": "خرید سنگین حقوقی",
                 "conditions": [
                     {"field": "volume", "operator": ">", "value": 2000000},
-                    {"field": "change_pct", "operator": ">", "value": 0}
+                    {"field": "total_score", "operator": ">", "value": 60}
                 ]
             },
             {
-                "name": "شکست مقاومت",
-                "description": "عبور از مقاومت با تایید حجم",
+                "name": "سهم‌های ارزان",
+                "description": "pe پایین و eps بالا",
                 "conditions": [
-                    {"field": "volume", "operator": ">", "value": 3000000},
-                    {"field": "change_pct", "operator": ">", "value": 1}
+                    {"field": "pe", "operator": ">", "value": 0},
+                    {"field": "pe", "operator": "<", "value": 10},
+                    {"field": "eps", "operator": ">", "value": 0}
+                ]
+            },
+            {
+                "name": "سیگنال خرید",
+                "description": "سهم‌های با سیگنال خرید قوی",
+                "conditions": [
+                    {"field": "total_score", "operator": ">", "value": 70}
                 ]
             }
         ]
     }
 
+
+# ============================================================
+# Backtest Endpoints
+# ============================================================
+
+@app.post("/api/backtest")
+async def run_backtest(request: BacktestRequest):
+    """Run backtest on a stock"""
+    try:
+        db = SessionLocal()
+        history = db.query(PriceHistory).filter(
+            PriceHistory.ins_code == request.ins_code
+        ).order_by(PriceHistory.date.asc()).limit(request.days).all()
+        db.close()
+        
+        if len(history) < 50:
+            raise HTTPException(status_code=400, detail="Not enough price history")
+        
+        closes = [h.close for h in history]
+        highs = [h.high for h in history]
+        lows = [h.low for h in history]
+        volumes = [h.volume for h in history]
+        
+        # Get strategy
+        strategy_map = {
+            "rsi": StrategyType.RSI_OVERSOLD,
+            "macd": StrategyType.MACD_CROSS,
+            "bollinger": StrategyType.BOLLINGER_BOUNCE,
+            "ma_cross": StrategyType.MOVING_AVERAGE_CROSS,
+            "momentum": StrategyType.MOMENTUM,
+            "mean_reversion": StrategyType.MEAN_REVERSION,
+        }
+        
+        strategy = strategy_map.get(request.strategy)
+        if not strategy:
+            raise HTTPException(status_code=400, detail="Invalid strategy")
+        
+        # Run backtest
+        result = backtest_engine.run_backtest(
+            closes, highs, lows, volumes, strategy, request.params
+        )
+        
+        return {
+            "strategy": result.strategy_name,
+            "initial_capital": result.initial_capital,
+            "final_capital": result.final_capital,
+            "total_return": result.total_return,
+            "annual_return": result.annual_return,
+            "sharpe_ratio": result.sharpe_ratio,
+            "max_drawdown": result.max_drawdown,
+            "total_trades": result.total_trades,
+            "win_rate": result.win_rate,
+            "profit_factor": result.profit_factor,
+            "trades": [
+                {
+                    "entry_date": t.entry_date.isoformat(),
+                    "exit_date": t.exit_date.isoformat() if t.exit_date else None,
+                    "entry_price": t.entry_price,
+                    "exit_price": t.exit_price,
+                    "pnl": t.pnl,
+                    "pnl_pct": t.pnl_pct,
+                    "exit_reason": t.exit_reason
+                }
+                for t in result.trades
+            ]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error running backtest: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/strategies")
+async def get_strategies():
+    """Get available trading strategies"""
+    return {
+        "strategies": [
+            StrategyLibrary.rsi_oversold(),
+            StrategyLibrary.macd_cross(),
+            StrategyLibrary.bollinger_bounce(),
+            StrategyLibrary.ma_cross(),
+            StrategyLibrary.momentum(),
+            StrategyLibrary.mean_reversion(),
+        ]
+    }
+
+
+# ============================================================
+# Database Stats
+# ============================================================
+
+@app.get("/api/stats")
+async def get_stats():
+    """Get database statistics"""
+    db = SessionLocal()
+    
+    stats = {
+        "stocks": db.query(Stock).count(),
+        "price_history": db.query(PriceHistory).count(),
+        "shareholders": db.query(Shareholder).count(),
+        "client_type": db.query(ClientTypeHistory).count(),
+    }
+    
+    db.close()
+    return stats
+
+
+# ============================================================
+# Run Server
+# ============================================================
 
 if __name__ == "__main__":
     import uvicorn
