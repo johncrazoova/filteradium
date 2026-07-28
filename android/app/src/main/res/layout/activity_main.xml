@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0A0A1A">
+    android:background="#FF0A0A1A">
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="3dp"
         android:layout_alignParentTop="true"
-        android:progressTint="#00D4FF"
+        android:progressDrawable="@android:drawable/progress_horizontal"
         android:visibility="gone" />
 
     <WebView

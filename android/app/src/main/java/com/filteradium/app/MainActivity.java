@@ -1,6 +1,5 @@
 package com.filteradium.app;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.View;
@@ -11,16 +10,12 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 public class MainActivity extends Activity {
-
     private WebView webView;
     private ProgressBar progressBar;
-    
     private static final String SERVER_URL = "http://10.0.2.2:8000";
-    
-    @SuppressLint("SetJavaScriptEnabled")
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,19 +36,16 @@ public class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setSupportZoom(true);
-        settings.setBuiltInZoomControls(true);
-        settings.setDisplayZoomControls(false);
+        settings.setSupportZoom(false);
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
         
-        webView.setWebViewClient(new FilteradiumWebViewClient(this));
-        webView.setWebChromeClient(new FilteradiumChromeClient(this));
+        webView.setWebViewClient(new AppWebViewClient());
+        webView.setWebChromeClient(new AppChromeClient());
         
-        progressBar.setVisibility(View.VISIBLE);
         webView.loadUrl(SERVER_URL);
     }
-    
+
     @Override
     public void onBackPressed() {
         if (webView.canGoBack()) {
@@ -62,24 +54,46 @@ public class MainActivity extends Activity {
             super.onBackPressed();
         }
     }
-    
+
     @Override
     protected void onResume() {
         super.onResume();
+        webView.resumeTimers();
         webView.onResume();
     }
-    
+
     @Override
     protected void onPause() {
-        super.onPause();
         webView.onPause();
+        webView.pauseTimers();
+        super.onPause();
     }
-    
+
     @Override
     protected void onDestroy() {
         if (webView != null) {
+            webView.stopLoading();
             webView.destroy();
         }
         super.onDestroy();
+    }
+
+    private class AppWebViewClient extends WebViewClient {
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            progressBar.setVisibility(View.GONE);
+        }
+    }
+
+    private class AppChromeClient extends WebChromeClient {
+        @Override
+        public void onProgressChanged(WebView view, int newProgress) {
+            if (newProgress < 100) {
+                progressBar.setVisibility(View.VISIBLE);
+                progressBar.setProgress(newProgress);
+            } else {
+                progressBar.setVisibility(View.GONE);
+            }
+        }
     }
 }
