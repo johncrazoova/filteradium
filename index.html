@@ -2,697 +2,529 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>FILTERADIUM</title>
+<link rel="icon" href="favicon.png">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0A0A1A;--card:#1A1A2E;--card2:#16213E;--gold:#D4AF37;--gold2:#B8941F;--text:#E8E8E8;--text2:#888;--green:#00C853;--red:#FF1744;--blue:#448AFF;--border:#2A2A3E}
-body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl}
-.header{background:linear-gradient(135deg,#0D0D2B,#1A1A3E);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gold);position:sticky;top:0;z-index:100}
-.logo{font-size:22px;font-weight:900;color:var(--gold);letter-spacing:3px}
-.logo span{color:var(--text);font-size:14px;font-weight:400;margin-right:8px}
-.nav{display:flex;gap:4px}
-.nav button{background:transparent;border:none;color:var(--text2);padding:10px 16px;cursor:pointer;font-size:13px;border-radius:8px;transition:.2s}
-.nav button.active{background:var(--gold);color:#000;font-weight:700}
-.nav button:hover{background:var(--card2)}
-.tab{display:none;padding:16px;max-width:1200px;margin:0 auto}
+:root{--bg:#0B0B1A;--card:#12122A;--card2:#1A1A35;--gold:#C9A84C;--gold2:#A88B3D;--text:#E0E0E0;--text2:#7A7A9A;--green:#00C853;--red:#FF3D57;--blue:#448AFF;--orange:#FF9100;--border:#222244}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'Vazirmatn','IRANSans','Tahoma',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--gold);border-radius:2px}
+
+/* Header */
+.hdr{background:linear-gradient(180deg,#0D0D28 0%,#0B0B1A 100%);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.logo{font-size:20px;font-weight:900;color:var(--gold);letter-spacing:2px;display:flex;align-items:center;gap:8px}
+.logo svg{width:28px;height:28px}
+.conn{display:flex;align-items:center;gap:6px;font-size:11px}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 2s infinite}
+.conn-dot.on{background:var(--green)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Nav */
+.nav{display:flex;background:var(--card);border-top:1px solid var(--border);position:fixed;bottom:0;left:0;right:0;z-index:100;padding:4px 0;padding-bottom:max(4px,env(safe-area-inset-bottom))}
+.nav button{flex:1;background:none;border:none;color:var(--text2);padding:8px 4px;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:.2s}
+.nav button.active{color:var(--gold)}
+.nav button svg{width:22px;height:22px}
+.nav button span{font-family:inherit}
+
+/* Tabs */
+.tab{display:none;padding:12px;padding-bottom:80px}
 .tab.active{display:block}
-.card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid var(--border);transition:.2s}
-.card:hover{border-color:var(--gold)}
-.stock-row{display:grid;grid-template-columns:1fr 80px 80px 100px 80px;align-items:center;padding:12px;gap:8px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s}
-.stock-row:hover{background:var(--card2)}
-.stock-name{font-weight:700;font-size:15px}
-.stock-price{font-size:14px;text-align:center}
-.stock-change{font-size:13px;text-align:center;font-weight:600}
-.up{color:var(--green)}.down{color:var(--red)}
-.score-badge{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;font-weight:900;font-size:14px;border:2px solid}
-.score-sb{background:rgba(0,200,83,.15);color:var(--green);border-color:var(--green)}
-.score-b{background:rgba(68,138,255,.15);color:var(--blue);border-color:var(--blue)}
-.score-n{background:rgba(255,255,255,.08);color:var(--text2);border-color:var(--text2)}
-.score-s{background:rgba(255,23,68,.1);color:var(--red);border-color:var(--red)}
-.score-ss{background:rgba(255,23,68,.2);color:var(--red);border-color:var(--red)}
-.signal{font-size:11px;font-weight:700;margin-top:2px}
-.btn{background:var(--gold);color:#000;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;transition:.2s}
-.btn:hover{background:var(--gold2)}
+
+/* Cards */
+.card{background:var(--card);border-radius:14px;border:1px solid var(--border);overflow:hidden;margin-bottom:10px}
+.card-hdr{padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between}
+.card-hdr h3{font-size:14px;color:var(--gold);font-weight:700}
+
+/* Stock List */
+.tbl-hdr{display:grid;grid-template-columns:1fr 70px 60px 50px;padding:6px 16px;font-size:10px;color:var(--text2);border-bottom:1px solid var(--border)}
+.tbl-row{display:grid;grid-template-columns:1fr 70px 60px 50px;padding:12px 16px;align-items:center;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer;transition:.15s}
+.tbl-row:active{background:var(--card2)}
+.tbl-name{font-weight:700;font-size:14px}.tbl-sub{font-size:10px;color:var(--text2);margin-top:1px}
+.tbl-price{text-align:right;font-size:13px;font-weight:600}
+.tbl-chg{text-align:center;font-size:12px;font-weight:700;border-radius:6px;padding:3px 6px}
+.tbl-chg.up{color:var(--green);background:rgba(0,200,83,.1)}.tbl-chg.down{color:var(--red);background:rgba(255,61,87,.1)}
+.tbl-score{text-align:center}
+.score-c{width:36px;height:36px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;border:2px solid}
+.sc-sb{color:var(--green);border-color:var(--green);background:rgba(0,200,83,.08)}
+.sc-b{color:var(--blue);border-color:var(--blue);background:rgba(68,138,255,.08)}
+.sc-n{color:var(--text2);border-color:var(--text2);background:rgba(255,255,255,.03)}
+.sc-s{color:var(--red);border-color:var(--red);background:rgba(255,61,87,.08)}
+.sc-ss{color:var(--red);border-color:var(--red);background:rgba(255,61,87,.15)}
+
+/* Search */
+.search{padding:0 12px;margin-bottom:10px}
+.search input{width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);padding:12px 16px 12px 40px;border-radius:12px;font-size:14px;font-family:inherit}
+.search input:focus{outline:none;border-color:var(--gold)}
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text2)}
+.sort-row{display:flex;gap:6px;padding:0 12px;margin-bottom:10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.sort-row::-webkit-scrollbar{display:none}
+.sort-chip{padding:6px 14px;border-radius:20px;font-size:11px;white-space:nowrap;cursor:pointer;background:var(--card);border:1px solid var(--border);color:var(--text2);transition:.2s;flex-shrink:0}
+.sort-chip.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,.08)}
+
+/* Detail Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:var(--bg);border-radius:20px 20px 0 0;width:100%;max-width:600px;max-height:85vh;overflow-y:auto;padding:0;animation:slideUp .3s}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-close{position:absolute;top:12px;left:12px;width:32px;height:32px;border-radius:50%;background:var(--card);border:none;color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.modal-top{padding:24px 20px;text-align:center;position:relative}
+.modal-price{font-size:32px;font-weight:900;margin:8px 0 4px}
+.modal-chg{font-size:16px;font-weight:700}
+.modal-score-ring{width:80px;height:80px;margin:16px auto 8px;position:relative}
+.modal-score-ring canvas{width:100%;height:100%}
+.modal-score-val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:var(--gold)}
+
+/* Indicator Grid */
+.ind-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 16px 16px}
+.ind-item{background:var(--card);border-radius:12px;padding:12px;text-align:center}
+.ind-lbl{font-size:10px;color:var(--text2);margin-bottom:4px}
+.ind-val{font-size:18px;font-weight:800}
+.ind-bar{height:4px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+.ind-bar-fill{height:100%;border-radius:2px}
+
+/* Score Section */
+.score-section{padding:0 16px 16px}
+.score-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.score-row:last-child{border:none}
+.score-lbl{flex:1;font-size:12px;color:var(--text2)}
+.score-bar{flex:2;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:4px;transition:width .6s}
+.score-num{width:32px;text-align:center;font-weight:800;font-size:14px}
+
+/* Screener */
+.filter-section{padding:16px}
+.filter-row{display:flex;gap:8px;margin-bottom:10px;align-items:flex-end}
+.filter-row select,.filter-row input{flex:1}
+.filter-row select{min-width:0}
+.filter-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.fchip{display:inline-flex;align-items:center;gap:6px;background:rgba(201,168,76,.08);border:1px solid var(--gold);color:var(--gold);padding:6px 12px;border-radius:20px;font-size:11px}
+.fchip-x{cursor:pointer;opacity:.7;font-size:14px}
+.fchip-x:hover{opacity:1}
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.preset-btn{padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:12px;cursor:pointer;transition:.2s;text-align:center;font-family:inherit}
+.preset-btn:active{transform:scale(.96);border-color:var(--gold);color:var(--gold)}
+
+/* Buttons */
+.btn{background:var(--gold);color:#000;border:none;padding:12px 24px;border-radius:12px;cursor:pointer;font-weight:700;font-size:13px;width:100%;font-family:inherit;transition:.15s}
+.btn:active{transform:scale(.97);opacity:.9}
 .btn-outline{background:transparent;border:1px solid var(--gold);color:var(--gold)}
-.btn-danger{background:var(--red);color:#fff}
-.btn-sm{padding:6px 12px;font-size:12px}
-input,select{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:13px;width:100%;direction:rtl}
-input:focus,select:focus{outline:none;border-color:var(--gold)}
-label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
-.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
-.filter-chip{display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);padding:6px 14px;border-radius:20px;font-size:12px;margin:4px;cursor:pointer;transition:.2s}
-.filter-chip.active{border-color:var(--gold);background:rgba(212,175,55,.1);color:var(--gold)}
-.filter-chip .x{color:var(--red);cursor:pointer;font-weight:700}
-.detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-.detail-item{background:var(--card2);padding:12px;border-radius:8px;text-align:center}
-.detail-item .val{font-size:20px;font-weight:900;color:var(--gold);margin:4px 0}
-.detail-item .lbl{font-size:11px;color:var(--text2)}
-.bar{height:6px;background:var(--card2);border-radius:3px;overflow:hidden;margin-top:6px}
-.bar-fill{height:100%;border-radius:3px;transition:width .5s}
-.search{position:relative}
-.search input{padding-right:36px}
-.search::before{content:'🔍';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:14px}
-.stat-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
-.stat-row:last-child{border:none}
-.stat-label{color:var(--text2);font-size:13px}
-.stat-val{font-weight:700;font-size:14px}
-.empty{text-align:center;padding:60px 20px;color:var(--text2)}
-.empty .icon{font-size:48px;margin-bottom:12px}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;padding:12px 24px;border-radius:8px;font-weight:700;font-size:13px;z-index:999;opacity:0;transition:.3s}
+.btn-sm{padding:8px 14px;font-size:11px;width:auto}
+
+/* Forms */
+select,input[type=number]{background:var(--card);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:10px;font-size:13px;width:100%;font-family:inherit;appearance:none;-webkit-appearance:none}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237A7A9A' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:12px center}
+label{display:block;font-size:11px;color:var(--text2);margin-bottom:4px}
+
+/* Results */
+.result-card{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);cursor:pointer}
+.result-card:active{background:var(--card2)}
+.result-info{flex:1}
+.result-name{font-weight:700;font-size:14px}
+.result-price{font-size:12px;color:var(--text2);margin-top:2px}
+
+/* Toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;padding:10px 20px;border-radius:20px;font-weight:700;font-size:12px;z-index:999;opacity:0;transition:.3s;pointer-events:none}
 .toast.show{opacity:1}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center}
-.modal-overlay.show{display:flex}
-.modal{background:var(--card);border-radius:16px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;border:1px solid var(--gold)}
-.modal h3{color:var(--gold);margin-bottom:16px}
-@media(max-width:600px){
-  .stock-row{grid-template-columns:1fr 60px 60px 80px 60px;font-size:12px}
-  .form-row,.form-row-3{grid-template-columns:1fr}
-  .detail-grid{grid-template-columns:1fr 1fr}
-  .nav button{padding:8px 10px;font-size:11px}
+
+/* Loading */
+.loading{text-align:center;padding:40px;color:var(--text2)}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Empty state */
+.empty{text-align:center;padding:60px 20px;color:var(--text2)}
+.empty-icon{font-size:48px;margin-bottom:12px}
+
+/* Market summary */
+.mkt-summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 12px 10px}
+.mkt-box{background:var(--card);border-radius:10px;padding:10px;text-align:center}
+.mkt-box .val{font-size:16px;font-weight:800}
+.mkt-box .lbl{font-size:9px;color:var(--text2);margin-top:2px}
+
+@media(min-width:768px){
+  .tbl-row{grid-template-columns:1.2fr 80px 70px 50px;padding:14px 20px}
+  .ind-grid{grid-template-columns:repeat(3,1fr)}
 }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="logo">FILTERADIUM <span>STOCKS</span></div>
-  <div class="nav">
-    <button class="active" onclick="showTab('market')">بازار</button>
-    <button onclick="showTab('screener')">فیلتر</button>
-    <button onclick="showTab('results')">نتایج</button>
-    <button onclick="showTab('settings')">تنظیمات</button>
+<!-- Header -->
+<div class="hdr">
+  <div class="logo">
+    <svg viewBox="0 0 28 28" fill="none"><rect x="2" y="2" width="24" height="24" rx="6" stroke="#C9A84C" stroke-width="2"/><path d="M7 20l4-8 4 4 6-10" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    FILTERADIUM
+  </div>
+  <div class="conn">
+    <div class="conn-dot" id="connDot"></div>
+    <span id="connText">در حال اتصال...</span>
   </div>
 </div>
 
+<!-- Market Tab -->
 <div id="tab-market" class="tab active">
-  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-    <div class="search" style="flex:1;min-width:200px">
-      <input id="searchInput" placeholder="جستجوی سهم..." oninput="renderMarket()">
+  <div class="mkt-summary" id="mktSummary"></div>
+  <div class="search">
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input id="searchInput" placeholder="جستجوی نماد..." oninput="filterList()">
     </div>
-    <select id="sortSelect" onchange="renderMarket()" style="width:auto;min-width:140px">
-      <option value="score-desc">امتیاز ↓</option>
-      <option value="score-asc">امتیاز ↑</option>
-      <option value="change-desc">تغییرات ↓</option>
-      <option value="change-asc">تغییرات ↑</option>
-      <option value="volume-desc">حجم ↓</option>
-      <option value="name-asc">نام الفبا</option>
-    </select>
-    <button class="btn btn-sm" onclick="recalcAll()">🔄 بروزرسانی</button>
   </div>
-  <div id="marketList"></div>
+  <div class="sort-row" id="sortRow">
+    <div class="sort-chip active" data-sort="score" onclick="setSort('score',this)">امتیاز</div>
+    <div class="sort-chip" data-sort="chg-up" onclick="setSort('chg-up',this)">بیشترین رشد</div>
+    <div class="sort-chip" data-sort="chg-down" onclick="setSort('chg-down',this)">بیشترین افت</div>
+    <div class="sort-chip" data-sort="vol" onclick="setSort('vol',this)">بیشترین حجم</div>
+    <div class="sort-chip" data-sort="name" onclick="setSort('name',this)">نام</div>
+  </div>
+  <div class="card">
+    <div class="tbl-hdr"><span>نماد</span><span style="text-align:right">قیمت</span><span style="text-align:center">تغییر</span><span style="text-align:center">امتیاز</span></div>
+    <div id="stockList"><div class="loading"><div class="spinner"></div>دریافت اطلاعات بازار...</div></div>
+  </div>
 </div>
 
+<!-- Screener Tab -->
 <div id="tab-screener" class="tab">
   <div class="card">
-    <h3 style="color:var(--gold);margin-bottom:12px">🔍 فیلتر سفارشی</h3>
-    <p style="color:var(--text2);font-size:13px;margin-bottom:16px">شرط‌های فیلتر رو اضافه کنید:</p>
-    <div id="filterChips" style="margin-bottom:16px"></div>
-    <div class="form-row-3">
-      <div>
-        <label>اندیکاتور</label>
-        <select id="fIndicator">
-          <option value="totalScore">امتیاز کل</option>
-          <option value="technicalScore">امتیاز تکنیکال</option>
-          <option value="momentumScore">امتیاز مومنتوم</option>
-          <option value="volatilityScore">امتیاز نوسان</option>
-          <option value="volumeScore">امتیاز حجم</option>
-          <option value="rsi">RSI</option>
-          <option value="macdHist">MACD هیستوگرام</option>
-          <option value="adx">ADX</option>
-          <option value="cci">CCI</option>
-          <option value="mfi">MFI</option>
-          <option value="stochK">استوکاستیک K</option>
-          <option value="williamsR">Williams %R</option>
-          <option value="bbPosition">موقعیت بولینگر</option>
-          <option value="priceVsSMA20">قیمت vs SMA20</option>
-        </select>
+    <div class="card-hdr"><h3>🔍 فیلتر پیشرفته</h3></div>
+    <div class="filter-section">
+      <div class="filter-chips" id="filterChips"></div>
+      <div class="filter-row">
+        <div style="flex:2"><label>اندیکاتور</label><select id="fInd"><option value="totalScore">امتیاز کل</option><option value="technicalScore">تکنیکال</option><option value="momentumScore">مومنتوم</option><option value="volatilityScore">نوسان</option><option value="volumeScore">حجم</option><option value="rsi">RSI</option><option value="macdHist">MACD</option><option value="adx">ADX</option><option value="cci">CCI</option><option value="mfi">MFI</option><option value="stochK">استوکاستیک</option><option value="bbPos">بولینگر</option></select></div>
+        <div style="flex:1"><label>شرط</label><select id="fOp"><option value="gt">></option><option value="lt"><</option><option value="gte">≥</option><option value="lte">≤</option></select></div>
+        <div style="flex:1"><label>مقدار</label><input id="fVal" type="number" placeholder="30"></div>
       </div>
-      <div>
-        <label>شرط</label>
-        <select id="fOperator">
-          <option value="gt">بزرگتر از</option>
-          <option value="lt">کوچکتر از</option>
-          <option value="gte">بزرگتر مساوی</option>
-          <option value="lte">کوچکتر مساوی</option>
-          <option value="eq">مساوی</option>
-        </select>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="addFilter()">+ اضافه</button>
+        <button class="btn btn-sm btn-outline" onclick="clearFilters()" style="border-color:var(--red);color:var(--red)">پاک کردن</button>
+        <button class="btn btn-sm" onclick="runFilter()" style="margin-right:auto">🔍 اجرا</button>
       </div>
-      <div>
-        <label>مقدار</label>
-        <input id="fValue" type="number" placeholder="مثلاً 30">
-      </div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn" onclick="addFilter()">+ اضافه شرط</button>
-      <button class="btn btn-outline" onclick="clearFilters()">پاک کردن همه</button>
-      <button class="btn btn-danger btn-sm" onclick="runFilters()" style="margin-right:auto">🔍 اجرای فیلتر</button>
     </div>
   </div>
-  <div class="card" style="margin-top:12px">
-    <h3 style="color:var(--gold);margin-bottom:12px">⚡ فیلترهای آماده</h3>
-    <div style="display:flex;flex-wrap:wrap;gap:8px">
-      <button class="btn btn-outline btn-sm" onclick="presetOversold()">RSI اشباع فروش</button>
-      <button class="btn btn-outline btn-sm" onclick="presetOverbought()">RSI اشباع خرید</button>
-      <button class="btn btn-outline btn-sm" onclick="presetStrongTrend()">روند قوی</button>
-      <button class="btn btn-outline btn-sm" onclick="presetBullish()">سیگنال خرید قوی</button>
-      <button class="btn btn-outline btn-sm" onclick="presetVolumeSurge()">حجم غیرعادی</button>
-      <button class="btn btn-outline btn-sm" onclick="presetGoodScore()">امتیاز بالای 70</button>
+  <div class="card">
+    <div class="card-hdr"><h3>⚡ فیلترهای سریع</h3></div>
+    <div class="filter-section">
+      <div class="preset-grid">
+        <button class="preset-btn" onclick="preset('oversold')">📉 اشباع فروش<br><small>RSI < 30</small></button>
+        <button class="preset-btn" onclick="preset('overbought')">📈 اشباع خرید<br><small>RSI > 70</small></button>
+        <button class="preset-btn" onclick="preset('trend')">📊 روند قوی<br><small>ADX > 25</small></button>
+        <button class="preset-btn" onclick="preset('buy')">✅ سیگنال خرید<br><small>امتیاز > 60</small></button>
+        <button class="preset-btn" onclick="preset('vol')">🔊 حجم بالا<br><small>VolumeScore > 65</small></button>
+        <button class="preset-btn" onclick="preset('top')">🏆 برترین‌ها<br><small>امتیاز > 75</small></button>
+      </div>
     </div>
   </div>
 </div>
 
+<!-- Results Tab -->
 <div id="tab-results" class="tab">
-  <div id="resultsContent"></div>
+  <div id="resultsContent">
+    <div class="empty"><div class="empty-icon">🔍</div><p>فیلتری اجرا نشده</p><p style="font-size:12px;margin-top:8px">از تب فیلتر شرط‌های مورد نظرتون رو بذارید و اجرا کنید</p></div>
+  </div>
 </div>
 
+<!-- Settings Tab -->
 <div id="tab-settings" class="tab">
   <div class="card">
-    <h3 style="color:var(--gold);margin-bottom:12px">⚙️ تنظیمات اندیکاتورها</h3>
-    <div class="form-row">
-      <div><label>دوره SMA</label><input id="setSMA" type="number" value="20"></div>
-      <div><label>دوره EMA</label><input id="setEMA" type="number" value="12"></div>
-      <div><label>دوره RSI</label><input id="setRSI" type="number" value="14"></div>
-      <div><label>دوره MACD</label><input id="setMACD" type="number" value="26"></div>
-      <div><label>دوره ATR</label><input id="setATR" type="number" value="14"></div>
-      <div><label>دوره ADX</label><input id="setADX" type="number" value="14"></div>
+    <div class="card-hdr"><h3>🌐 اتصال</h3></div>
+    <div style="padding:16px">
+      <label>آدرس سرور TSETMC (پروکسی)</label>
+      <input id="serverUrl" type="text" style="margin-bottom:8px" placeholder="مثلاً http://your-server:8000/api">
+      <button class="btn btn-sm" onclick="testConnection()">تست اتصال</button>
     </div>
-    <button class="btn" onclick="saveSettings()">ذخیره و بروزرسانی</button>
   </div>
-  <div class="card" style="margin-top:12px">
-    <h3 style="color:var(--gold);margin-bottom:12px">📦 مدیریت داده</h3>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-outline btn-sm" onclick="exportCSV()">خروجی CSV</button>
-      <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile').click()">ورودی CSV</button>
-      <input type="file" id="importFile" accept=".csv" style="display:none" onchange="importCSV(event)">
-      <button class="btn btn-danger btn-sm" onclick="if(confirm('پاک شود؟')){localStorage.clear();location.reload()}">پاک کردن همه</button>
+  <div class="card">
+    <div class="card-hdr"><h3>📊 تنظیمات</h3></div>
+    <div style="padding:16px">
+      <div class="filter-row"><div><label>دوره RSI</label><input id="cfgRSI" type="number" value="14"></div><div><label>دوره MACD</label><input id="cfgMACD" type="number" value="26"></div></div>
+      <div class="filter-row"><div><label>دوره SMA</label><input id="cfgSMA" type="number" value="20"></div><div><label>دوره ADX</label><input id="cfgADX" type="number" value="14"></div></div>
+      <button class="btn" onclick="saveConfig()" style="margin-top:8px">ذخیره تنظیمات</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><h3>📦 داده</h3></div>
+    <div style="padding:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-outline" onclick="exportData()">خروجی CSV</button>
+      <button class="btn btn-sm btn-outline" onclick="fetchMarketData()" style="border-color:var(--green);color:var(--green)">🔄 بروزرسانی بازار</button>
     </div>
   </div>
 </div>
 
-<div id="toast" class="toast"></div>
-<div id="modal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
-  <div class="modal" id="modalContent"></div>
+<!-- Detail Modal -->
+<div class="modal-bg" id="detailModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalBody"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Bottom Nav -->
+<div class="nav">
+  <button class="active" onclick="showTab('market',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>بازار</span></button>
+  <button onclick="showTab('screener',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><span>فیلتر</span></button>
+  <button onclick="showTab('results',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg><span>نتایج</span></button>
+  <button onclick="showTab('settings',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg><span>تنظیمات</span></button>
 </div>
 
 <script>
-// ========== INDICATORS ==========
-function sma(data, period) {
-  const r = [];
-  for (let i = 0; i < data.length; i++) {
-    if (i < period - 1) { r.push(null); continue; }
-    let s = 0;
-    for (let j = i - period + 1; j <= i; j++) s += data[j];
-    r.push(s / period);
-  }
-  return r;
-}
+// ====== CONFIG ======
+const API_BASE = localStorage.getItem('f_api') || 'https://cdn.tsetmc.com/api';
+const CFG = JSON.parse(localStorage.getItem('f_cfg') || '{"rsi":14,"macd":26,"sma":20,"adx":14}');
 
-function ema(data, period) {
-  const r = [data[0]];
-  const k = 2 / (period + 1);
-  for (let i = 1; i < data.length; i++) {
-    r.push(data[i] * k + r[i - 1] * (1 - k));
-  }
-  return r;
-}
+// ====== INDICATORS ======
+function sma(d,p){const r=[];for(let i=0;i<d.length;i++){if(i<p-1){r.push(null);continue}let s=0;for(let j=i-p+1;j<=i;j++)s+=d[j];r.push(s/p)}return r}
+function ema(d,p){const r=[d[0]];const k=2/(p+1);for(let i=1;i<d.length;i++)r.push(d[i]*k+r[i-1]*(1-k));return r}
+function rsi(c,p){const r=[];let g=0,l=0;for(let i=0;i<c.length;i++){if(!i){r.push(null);continue}const d=c[i]-c[i-1];if(i<=p){if(d>0)g+=d;l-=Math.min(d,0);if(i<p){r.push(null);continue}const ag=g/p,al=l/p;r.push(al?100-100/(1+ag/al):100);g=ag;l=al}else{g=(g*(p-1)+(d>0?d:0))/p;l=(l*(p-1)+(d<0?-d:0))/p;r.push(l?100-100/(1+g/l):100)}}return r}
+function macd(c,f,s,g){const ef=ema(c,f),es=ema(c,s),ln=ef.map((v,i)=>v-es[i]),sg=ema(ln,g);return{line:ln,signal:sg,hist:ln.map((v,i)=>v-sg[i])}}
+function boll(c,p,m){const mid=sma(c,p),u=[],l=[];for(let i=0;i<c.length;i++){if(mid[i]===null){u.push(null);l.push(null);continue}let ss=0;for(let j=i-p+1;j<=i;j++)ss+=(c[j]-mid[i])**2;const std=Math.sqrt(ss/p);u.push(mid[i]+m*std);l.push(mid[i]-m*std)}return{upper:u,mid,lower:l}}
+function stoch(h,l,c,kp,dp){const k=[];for(let i=0;i<c.length;i++){if(i<kp-1){k.push(null);continue}let hh=-Infinity,ll=Infinity;for(let j=i-kp+1;j<=i;j++){hh=Math.max(hh,h[j]);ll=Math.min(ll,l[j])}k.push(hh===ll?50:(c[i]-ll)/(hh-ll)*100)}const kc=k.map(v=>v===null?0:v);return{k,d:sma(kc,dp)}}
+function adxCalc(h,l,c,p){const pDM=[],nDM=[],tr=[h[0]-l[0]];pDM.push(0);nDM.push(0);for(let i=1;i<c.length;i++){const up=h[i]-h[i-1],dn=l[i-1]-l[i];pDM.push(up>dn&&up>0?up:0);nDM.push(dn>up&&dn>0?dn:0);tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])))}const a=sma(tr,p),sp=ema(pDM,p),sn=ema(nDM,p);return sma(sp.map((v,i)=>{const pdi=a[i]?v/a[i]*100:0,ndi=a[i]?sn[i]/a[i]*100:0;return pdi+ndi?Math.abs(pdi-ndi)/(pdi+ndi)*100:0}),p)}
+function cciCalc(h,l,c,p){const tp=c.map((v,i)=>(h[i]+l[i]+v)/3),ts=sma(tp,p);return tp.map((v,i)=>{if(!ts[i])return null;let md=0;for(let j=i-p+1;j<=i;j++)md+=Math.abs(tp[j]-ts[i]);md/=p;return md?(v-ts[i])/(.015*md):0})}
+function wrCalc(h,l,c,p){const r=[];for(let i=0;i<c.length;i++){if(i<p-1){r.push(null);continue}let hh=-Infinity,ll=Infinity;for(let j=i-p+1;j<=i;j++){hh=Math.max(hh,h[j]);ll=Math.min(ll,l[j])}r.push(hh===ll?-50:(hh-c[i])/(hh-ll)*-100)}return r}
+function mfiCalc(h,l,c,v,p){const tp=c.map((x,i)=>(h[i]+l[i]+x)/3),mf=tp.map((x,i)=>x*v[i]),r=[];for(let i=0;i<c.length;i++){if(i<p){r.push(null);continue}let pm=0,nm=0;for(let j=i-p+1;j<=i;j++){if(tp[j]>tp[j-1])pm+=mf[j];else nm+=mf[j]}r.push(nm?100-100/(1+pm/nm):100)}return r}
+function obvCalc(c,v){const r=[0];for(let i=1;i<c.length;i++)r.push(c[i]>c[i-1]?r[i-1]+v[i]:c[i]<c[i-1]?r[i-1]-v[i]:r[i-1]);return r}
+function vwapCalc(h,l,c,v){const r=[];let ct=0,cv=0;for(let i=0;i<c.length;i++){const t=(h[i]+l[i]+c[i])/3;ct+=t*v[i];cv+=v[i];r.push(cv?ct/cv:c[i])}return r}
 
-function rsi(closes, period) {
-  const r = [];
-  let gains = 0, losses = 0;
-  for (let i = 0; i < closes.length; i++) {
-    if (i === 0) { r.push(null); continue; }
-    const diff = closes[i] - closes[i - 1];
-    if (i <= period) {
-      if (diff > 0) gains += diff; else losses -= diff;
-      if (i < period) { r.push(null); continue; }
-      const avgG = gains / period;
-      const avgL = losses / period;
-      r.push(avgL === 0 ? 100 : 100 - 100 / (1 + avgG / avgL));
-      gains = avgG; losses = avgL;
-    } else {
-      const g = diff > 0 ? diff : 0;
-      const l = diff < 0 ? -diff : 0;
-      gains = (gains * (period - 1) + g) / period;
-      losses = (losses * (period - 1) + l) / period;
-      r.push(losses === 0 ? 100 : 100 - 100 / (1 + gains / losses));
-    }
-  }
-  return r;
-}
+function analyze(stock){
+  const{highs:lows,lows:lo,closes:c,volumes:v}=stock;
+  const h=stock.highs,lo2=stock.lows;
+  const n=c.length-1,r14=rsi(c,CFG.rsi),m=macd(c,12,CFG.macd,9),bb=boll(c,CFG.sma,2),st=stoch(h,lo2,c,14,3),
+        ad=adxCalc(h,lo2,c,CFG.adx),cc=cciCalc(h,lo2,c,20),wr=wrCalc(h,lo2,c,14),mf=mfiCalc(h,lo2,c,v,14),
+        ob=obvCalc(c,v),vw=vwapCalc(h,lo2,c,v),s20=sma(c,CFG.sma),s50=sma(c,50);
 
-function macd(closes, fast, slow, sig) {
-  const emaF = ema(closes, fast);
-  const emaS = ema(closes, slow);
-  const line = emaF.map((v, i) => v - emaS[i]);
-  const signal = ema(line, sig);
-  const hist = line.map((v, i) => v - signal[i]);
-  return { line, signal, hist };
-}
+  let tech=50;
+  if(s20[n]){c[n]>s20[n]?tech+=10:tech-=10;s20[n]>(s50[n]||0)?tech+=10:tech-=10;c[n]>(s50[n]||0)?tech+=5:tech-=5}
+  m.line[n]>m.line[n-1]?tech+=8:tech-=8;m.hist[n]>0?tech+=8:tech-=8;ad[n]>25?tech+=7:tech-=3;tech=clamp(tech);
 
-function bollinger(closes, period, mult) {
-  const mid = sma(closes, period);
-  const upper = [], lower = [];
-  for (let i = 0; i < closes.length; i++) {
-    if (mid[i] === null) { upper.push(null); lower.push(null); continue; }
-    let ss = 0;
-    for (let j = i - period + 1; j <= i; j++) ss += (closes[j] - mid[i]) ** 2;
-    const std = Math.sqrt(ss / period);
-    upper.push(mid[i] + mult * std);
-    lower.push(mid[i] - mult * std);
-  }
-  return { upper, mid, lower };
-}
+  let mom=50;
+  mom+=(r14[n]||50-50)*.4;st.k[n]>st.d[n]?mom+=8:mom-=8;st.k[n]>80?mom-=5:st.k[n]<20?mom+=5:mom+=0;
+  cc[n]>100?mom+=5:cc[n]<-100?mom-=5:0;wr[n]>-20?mom-=3:wr[n]<-80?mom+=3:0;mom=clamp(mom);
 
-function stochastic(highs, lows, closes, kPeriod, dPeriod) {
-  const k = [];
-  for (let i = 0; i < closes.length; i++) {
-    if (i < kPeriod - 1) { k.push(null); continue; }
-    let hh = -Infinity, ll = Infinity;
-    for (let j = i - kPeriod + 1; j <= i; j++) { hh = Math.max(hh, highs[j]); ll = Math.min(ll, lows[j]); }
-    k.push(hh === ll ? 50 : ((closes[i] - ll) / (hh - ll)) * 100);
-  }
-  const kClean = k.map(v => v === null ? 0 : v);
-  const d = sma(kClean, dPeriod);
-  return { k, d };
-}
+  let vol2=50;
+  if(bb.upper[n]){const bw=(bb.upper[n]-bb.lower[n])/bb.mid[n];bw<.05?vol2+=10:bw>.15?vol2-=10:0;const bp=(c[n]-bb.lower[n])/(bb.upper[n]-bb.lower[n]);bp<.2?vol2+=5:bp>.8?vol2-=5:0}
+  vol2=clamp(vol2);
 
-function atr(highs, lows, closes, period) {
-  const tr = [highs[0] - lows[0]];
-  for (let i = 1; i < closes.length; i++) {
-    tr.push(Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i - 1]), Math.abs(lows[i] - closes[i - 1])));
-  }
-  return sma(tr, period);
-}
+  let vsc=50;
+  vsc+=((mf[n]||50)-50)*.3;ob[n]>ob[n-1]?vsc+=10:vsc-=10;c[n]>vw[n]?vsc+=8:vsc-=8;
+  const avgV=v.slice(-20).reduce((a,b)=>a+b,0)/20;v[n]>avgV*1.5?vsc+=7:0;vsc=clamp(vsc);
 
-function adx(highs, lows, closes, period) {
-  const pDM = [], nDM = [], tr = [highs[0] - lows[0]];
-  pDM.push(0); nDM.push(0);
-  for (let i = 1; i < closes.length; i++) {
-    const up = highs[i] - highs[i - 1];
-    const dn = lows[i - 1] - lows[i];
-    pDM.push(up > dn && up > 0 ? up : 0);
-    nDM.push(dn > up && dn > 0 ? dn : 0);
-    tr.push(Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i - 1]), Math.abs(lows[i] - closes[i - 1])));
+  const total=Math.round(tech*.35+mom*.3+vol2*.15+vsc*.2);
+  const signal=total>80?'خرید قوی':total>60?'خرید':total>40?'خنثی':total>20?'فروش':'فروش قوی';
+
+  return{totalScore:total,technicalScore:Math.round(tech),momentumScore:Math.round(mom),volatilityScore:Math.round(vol2),volumeScore:Math.round(vsc),signal,
+    ind:{rsi:r14[n],macdH:m.hist[n],adx:ad[n],cci:cc[n],mfi:mf[n],stochK:st.k[n],wr:wr[n],bbPos:bb.upper[n]?(c[n]-bb.lower[n])/(bb.upper[n]-bb.lower[n]):.5,obv:ob[n],vwap:vw[n]}};
+}
+function clamp(v){return Math.max(0,Math.min(100,v))}
+
+// ====== STATE ======
+let allStocks=[], currentSort='score', filters=[], filteredResults=[];
+
+// ====== TSETMC API ======
+async function fetchMarketData(){
+  document.getElementById('stockList').innerHTML='<div class="loading"><div class="spinner"></div>دریافت اطلاعات بازار...</div>';
+  try{
+    // Try to get market overview from TSETMC CDN
+    const resp=await fetch(API_BASE+'/MarketData/GetMarketOverview',{headers:{'Accept':'application/json'}});
+    if(!resp.ok)throw new Error('API error');
+    const data=await resp.json();
+    allStocks=parseMarketData(data);
+  }catch(e){
+    // Fallback: try local data or use demo
+    console.log('API error:',e.message);
+    const saved=localStorage.getItem('f_stocks');
+    if(saved){allStocks=JSON.parse(saved);toast('داده‌های کش شده بارگذاری شد')}
+    else{allStocks=genDemoMarket();toast('داده نمونه بارگذاری شد')}
   }
-  const atr14 = sma(tr, period);
-  const smoothedPDM = ema(pDM, period);
-  const smoothedNDM = ema(nDM, period);
-  const dx = smoothedPDM.map((v, i) => {
-    const pdi = atr14[i] ? (v / atr14[i]) * 100 : 0;
-    const ndi = atr14[i] ? (smoothedNDM[i] / atr14[i]) * 100 : 0;
-    return pdi + ndi === 0 ? 0 : Math.abs(pdi - ndi) / (pdi + ndi) * 100;
+  // Analyze all
+  allStocks.forEach(s=>{
+    try{Object.assign(s,analyze(s))}catch(e){s.totalScore=50;s.signal='نامشخص';s.ind={}}
   });
-  return sma(dx, period);
-}
-
-function cci(highs, lows, closes, period) {
-  const tp = closes.map((c, i) => (highs[i] + lows[i] + c) / 3);
-  const tpSma = sma(tp, period);
-  return tp.map((v, i) => {
-    if (tpSma[i] === null) return null;
-    let md = 0;
-    for (let j = i - period + 1; j <= i; j++) md += Math.abs(tp[j] - tpSma[i]);
-    md /= period;
-    return md === 0 ? 0 : (v - tpSma[i]) / (0.015 * md);
-  });
-}
-
-function williamsR(highs, lows, closes, period) {
-  const r = [];
-  for (let i = 0; i < closes.length; i++) {
-    if (i < period - 1) { r.push(null); continue; }
-    let hh = -Infinity, ll = Infinity;
-    for (let j = i - period + 1; j <= i; j++) { hh = Math.max(hh, highs[j]); ll = Math.min(ll, lows[j]); }
-    r.push(hh === ll ? -50 : ((hh - closes[i]) / (hh - ll)) * -100);
-  }
-  return r;
-}
-
-function mfi(highs, lows, closes, volumes, period) {
-  const tp = closes.map((c, i) => (highs[i] + lows[i] + c) / 3);
-  const mf = tp.map((v, i) => v * volumes[i]);
-  const r = [];
-  for (let i = 0; i < closes.length; i++) {
-    if (i < period) { r.push(null); continue; }
-    let pmf = 0, nmf = 0;
-    for (let j = i - period + 1; j <= i; j++) {
-      if (tp[j] > tp[j - 1]) pmf += mf[j]; else nmf += mf[j];
-    }
-    r.push(nmf === 0 ? 100 : 100 - 100 / (1 + pmf / nmf));
-  }
-  return r;
-}
-
-function obv(closes, volumes) {
-  const r = [0];
-  for (let i = 1; i < closes.length; i++) {
-    r.push(closes[i] > closes[i - 1] ? r[i - 1] + volumes[i] : closes[i] < closes[i - 1] ? r[i - 1] - volumes[i] : r[i - 1]);
-  }
-  return r;
-}
-
-function vwap(highs, lows, closes, volumes) {
-  const r = [];
-  let cumTP = 0, cumV = 0;
-  for (let i = 0; i < closes.length; i++) {
-    const tp = (highs[i] + lows[i] + closes[i]) / 3;
-    cumTP += tp * volumes[i];
-    cumV += volumes[i];
-    r.push(cumV === 0 ? closes[i] : cumTP / cumV);
-  }
-  return r;
-}
-
-// ========== SCORING ==========
-function calcScores(stock) {
-  const { highs, lows, closes, volumes } = stock;
-  const n = closes.length - 1;
-  const s20 = sma(closes, 20);
-  const s50 = sma(closes, 50);
-  const s12 = ema(closes, 12);
-  const s26 = ema(closes, 26);
-  const r = rsi(closes, 14);
-  const m = macd(closes, 12, 26, 9);
-  const bb = bollinger(closes, 20, 2);
-  const st = stochastic(highs, lows, closes, 14, 3);
-  const ad = adx(highs, lows, closes, 14);
-  const cc = cci(highs, lows, closes, 20);
-  const wr = williamsR(highs, lows, closes, 14);
-  const mf = mfi(highs, lows, closes, volumes, 14);
-  const ob = obv(closes, volumes);
-  const vw = vwap(highs, lows, closes, volumes);
-
-  // Technical Score (trend)
-  let tech = 50;
-  if (s20[n] && s50[n]) {
-    if (closes[n] > s20[n]) tech += 10; else tech -= 10;
-    if (s20[n] > s50[n]) tech += 10; else tech -= 10;
-    if (closes[n] > s50[n]) tech += 5; else tech -= 5;
-  }
-  if (s12[n] > s26[n]) tech += 10; else tech -= 10;
-  if (m.hist[n] > 0) tech += 8; else tech -= 8;
-  if (m.hist[n] > m.hist[n - 1]) tech += 5; else tech -= 5;
-  if (ad[n] > 25) tech += 7; else tech -= 3;
-  tech = Math.max(0, Math.min(100, tech));
-
-  // Momentum Score
-  let mom = 50;
-  const rsiVal = r[n] || 50;
-  mom += (rsiVal - 50) * 0.4;
-  if (st.k[n] > st.d[n]) mom += 8; else mom -= 8;
-  if (st.k[n] > 80) mom -= 5; else if (st.k[n] < 20) mom += 5;
-  if (cc[n] > 100) mom += 5; else if (cc[n] < -100) mom -= 5;
-  if (wr[n] > -20) mom -= 3; else if (wr[n] < -80) mom += 3;
-  mom = Math.max(0, Math.min(100, mom));
-
-  // Volatility Score
-  let vol = 50;
-  if (bb.upper[n] && bb.lower[n]) {
-    const bw = (bb.upper[n] - bb.lower[n]) / bb.mid[n];
-    if (bw < 0.05) vol += 10; else if (bw > 0.15) vol -= 10;
-    const bp = (closes[n] - bb.lower[n]) / (bb.upper[n] - bb.lower[n]);
-    if (bp < 0.2) vol += 5; else if (bp > 0.8) vol -= 5;
-  }
-  vol = Math.max(0, Math.min(100, vol));
-
-  // Volume Score
-  let vsc = 50;
-  const mfiVal = mf[n] || 50;
-  vsc += (mfiVal - 50) * 0.3;
-  if (ob[n] > ob[n - 1]) vsc += 10; else vsc -= 10;
-  if (closes[n] > vw[n]) vsc += 8; else vsc -= 8;
-  const avgVol = volumes.slice(-20).reduce((a, b) => a + b, 0) / 20;
-  if (volumes[n] > avgVol * 1.5) vsc += 7;
-  vsc = Math.max(0, Math.min(100, vsc));
-
-  const total = Math.round(tech * 0.35 + mom * 0.30 + vol * 0.15 + vsc * 0.20);
-
-  let signal;
-  if (total > 80) signal = 'خرید قوی';
-  else if (total > 60) signal = 'خرید';
-  else if (total > 40) signal = 'خنثی';
-  else if (total > 20) signal = 'فروش';
-  else signal = 'فروش قوی';
-
-  return {
-    totalScore: total, technicalScore: Math.round(tech), momentumScore: Math.round(mom),
-    volatilityScore: Math.round(vol), volumeScore: Math.round(vsc), signal,
-    indicators: { rsi: r[n], macdHist: m.hist[n], adx: ad[n], cci: cc[n], mfi: mfiVal, stochK: st.k[n], williamsR: wr[n], bbPosition: bb.upper[n] ? (closes[n] - bb.lower[n]) / (bb.upper[n] - bb.lower[n]) : 0.5, priceVsSMA20: s20[n] ? closes[n] - s20[n] : 0 }
-  };
-}
-
-// ========== DEMO DATA ==========
-function genStockData(name, code, basePrice, trend) {
-  const highs = [], lows = [], closes = [], volumes = [];
-  let price = basePrice;
-  for (let i = 0; i < 120; i++) {
-    const t = trend + (Math.random() - 0.48) * 3;
-    const change = t + (Math.random() - 0.5) * 4;
-    const open = price;
-    price = Math.max(price * 0.7, price + change);
-    const high = Math.max(open, price) * (1 + Math.random() * 0.02);
-    const low = Math.min(open, price) * (1 - Math.random() * 0.02);
-    highs.push(high); lows.push(low); closes.push(price);
-    volumes.push(Math.round((500000 + Math.random() * 3000000) * (1 + Math.abs(change) * 0.1)));
-  }
-  return { name, code, highs, lows, closes, volumes,
-    price: closes[closes.length - 1],
-    prevPrice: closes[closes.length - 2],
-    volume: volumes[volumes.length - 1] };
-}
-
-const DEMO_STOCKS = [
-  genStockData('خودرو', '0001', 3200, 5),
-  genStockData('شپنا', '0002', 28000, 3),
-  genStockData('فولاد', '0003', 15500, 4),
-  genStockData('فملی', '0004', 8900, -2),
-  genStockData('شبندر', '0005', 4500, 2),
-  genStockData('خساپا', '0006', 1800, -3),
-  genStockData('وبملت', '0007', 2500, 1),
-  genStockData('شتران', '0008', 32000, -1),
-  genStockData('کگل', '0009', 42000, 6),
-  genStockData('فخوز', '0010', 22000, 3),
-  genStockData('ذوب', '0011', 3500, -2),
-  genStockData('شپدیس', '0012', 68000, 2),
-  genStockData('پارسان', '0013', 3800, 4),
-  genStockData('خگستر', '0014', 1200, -1),
-  genStockData('غدیس', '0015', 5200, 1),
-  genStockData('میدکو', '0016', 14000, 5),
-  genStockData('آپادانا', '0017', 8500, -3),
-  genStockData('فغدیر', '0018', 6500, 2),
-  genStockData('سهران', '0019', 18000, 4),
-  genStockData('بپاس', '0020', 9200, -1),
-];
-
-function enumStockData(name, code, basePrice, trend) {
-  return genStockData(name, code, basePrice, trend);
-}
-
-// ========== STATE ==========
-let stocks = [];
-let filters = [];
-let results = [];
-
-function init() {
-  const saved = localStorage.getItem('f_stocks');
-  if (saved) {
-    try { stocks = JSON.parse(saved); } catch(e) { stocks = DEMO_STOCKS; }
-  } else {
-    stocks = DEMO_STOCKS;
-    localStorage.setItem('f_stocks', JSON.stringify(stocks));
-  }
-  recalcAll();
-}
-
-function recalcAll() {
-  stocks.forEach(s => {
-    const sc = calcScores(s);
-    Object.assign(s, sc);
-  });
-  stocks.sort((a, b) => b.totalScore - a.totalScore);
-  localStorage.setItem('f_stocks', JSON.stringify(stocks));
+  localStorage.setItem('f_stocks',JSON.stringify(allStocks));
+  updateConnection(allStocks.length>0&&!allStocks[0].isDemo);
   renderMarket();
-  toast('بروزرسانی شد ✓');
+  renderSummary();
 }
 
-function renderMarket() {
-  const q = document.getElementById('searchInput').value;
-  const sort = document.getElementById('sortSelect').value;
-  let list = [...stocks];
-  if (q) list = list.filter(s => s.name.includes(q) || s.code.includes(q));
+function parseMarketData(data){
+  try{
+    const items=data.marketData||data.closingPriceInfo||[];
+    return items.filter(i=>i.iClose>0).map(i=>({
+      code:i.insCode||'0',name:i.lVal30||i.instrumentTitle||'?',symbol:i.lVal18||'?',
+      price:i.pClosing||0,prevPrice:i.pDrCotVal||0,change:i.pClosing?(i.pClosing-(i.pDrCotVal||i.pClosing)):0,
+      changePct:i.pClosing&&i.pDrCotVal?((i.pClosing-i.pDrCotVal)/i.pDrCotVal*100):0,
+      volume:i.qTitTrans||0,high:i.pHigh||0,low:i.pLow||0,open:i.pOpening||0,
+      highs:[],lows:[],closes:[],volumes:[],isDemo:false
+    })).slice(0,300);
+  }catch(e){return genDemoMarket()}
+}
 
-  if (sort === 'score-desc') list.sort((a, b) => b.totalScore - a.totalScore);
-  else if (sort === 'score-asc') list.sort((a, b) => a.totalScore - b.totalScore);
-  else if (sort === 'change-desc') list.sort((a, b) => (b.price - b.prevPrice) / b.prevPrice - (a.price - a.prevPrice) / a.prevPrice);
-  else if (sort === 'change-asc') list.sort((a, b) => (a.price - a.prevPrice) / a.prevPrice - (b.price - b.prevPrice) / b.prevPrice);
-  else if (sort === 'volume-desc') list.sort((a, b) => b.volume - a.volume);
-  else if (sort === 'name-asc') list.sort((a, b) => a.name.localeCompare(b.name, 'fa'));
+async function fetchStockHistory(insCode,days=120){
+  try{
+    const resp=await fetch(API_BASE+'/ClosingPrice/GetClosingPriceHistory/'+insCode);
+    const data=await resp.json();
+    const items=data.closingPriceHistory||data.dailyData||[];
+    return{highs:items.map(i=>i.high||i.pHigh||0),lows:items.map(i=>i.low||i.pLow||0),closes:items.map(i=>i.close||i.pClosing||0),volumes:items.map(i=>i.volume||i.qTitTrans||0)};
+  }catch(e){return null}
+}
 
-  const el = document.getElementById('marketList');
-  if (!list.length) { el.innerHTML = '<div class="empty"><div class="icon">📊</div>سهمی یافت نشد</div>'; return; }
+// ====== DEMO ======
+function genDemoMarket(){
+  const names=[['خودرو','0','3200',5],['شپنا','1','28000',3],['فولاد','2','15500',4],['فملی','3','8900',-2],['شبندر','4','4500',2],['خساپا','5','1800',-3],['وبملت','6','2500',1],['شتران','7','32000',-1],['کگل','8','42000',6],['فخوز','9','22000',3],['ذوب','10','3500',-2],['شپدیس','11','68000',2],['پارسان','12','3800',4],['خگستر','13','1200',-1],['غدیس','14','5200',1],['میدکو','15','14000',5],['آپادانا','16','8500',-3],['فغدیر','17','6500',2],['سهران','18','18000',4],['بپاس','19','9200',-1],['کاما','20','7500',3],['زماهان','21','4100',-2],['خزامیا','22','2900',1],['خنصیر','23','1500',5],['فباهنر','24','12500',2],['فاسمین','25','3600',-1],['کیمیا','26','22000',4],['نوری','27','85000',-3],['tti','28','5400',2],['آریا','29','16000',3]];
+  return names.map(([name,code,bp,t])=>{
+    const c=[],h=[],lo=[],v=[];
+    let p=+bp;
+    for(let i=0;i<120;i++){
+      const chg=t+(Math.random()-.48)*4;p=Math.max(p*.7,p+chg);
+      const open=i?p:c[c.length-1]||p;
+      h.push(Math.max(open,p)*(1+Math.random()*.02));lo.push(Math.min(open,p)*(1-Math.random()*.02));c.push(p);
+      v.push(Math.round((5e5+Math.random()*3e6)*(1+Math.abs(chg)*.1)));
+    }
+    return{code,name,symbol:name,price:c[c.length-1],prevPrice:c[c.length-2],change:c[c.length-1]-c[c.length-2],
+      changePct:((c[c.length-1]-c[c.length-2])/c[c.length-2]*100),volume:v[v.length-1],highs:h,lows:lo,closes:c,volumes:v,isDemo:true};
+  });
+}
 
-  el.innerHTML = list.map(s => {
-    const chg = ((s.price - s.prevPrice) / s.prevPrice * 100).toFixed(1);
-    const cls = chg >= 0 ? 'up' : 'down';
-    const sCls = s.totalScore > 80 ? 'score-sb' : s.totalScore > 60 ? 'score-b' : s.totalScore > 40 ? 'score-n' : s.totalScore > 20 ? 'score-s' : 'score-ss';
-    return `<div class="card" onclick="showDetail('${s.code}')" style="cursor:pointer">
-      <div class="stock-row">
-        <div><div class="stock-name">${s.name}</div><div style="font-size:11px;color:var(--text2)">${s.code}</div></div>
-        <div class="stock-price">${fmt(s.price)}</div>
-        <div class="stock-change ${cls}">${chg > 0 ? '+' : ''}${chg}%</div>
-        <div style="text-align:center"><div class="score-badge ${sCls}">${s.totalScore}</div><div class="signal ${cls}">${s.signal}</div></div>
-        <div class="stock-price" style="font-size:11px;color:var(--text2)">${fmtVol(s.volume)}</div>
-      </div>
+// ====== RENDER ======
+function renderMarket(){
+  const q=document.getElementById('searchInput').value.trim();
+  let list=[...allStocks];
+  if(q)list=list.filter(s=>(s.name||'').includes(q)||(s.symbol||'').includes(q)||(s.code||'').includes(q));
+  const s=currentSort;
+  if(s==='score')list.sort((a,b)=>(b.totalScore||0)-(a.totalScore||0));
+  else if(s==='chg-up')list.sort((a,b)=>(b.changePct||0)-(a.changePct||0));
+  else if(s==='chg-down')list.sort((a,b)=>(a.changePct||0)-(b.changePct||0));
+  else if(s==='vol')list.sort((a,b)=>(b.volume||0)-(a.volume||0));
+  else if(s==='name')list.sort((a,b)=>(a.name||'').localeCompare(b.name||'','fa'));
+
+  const el=document.getElementById('stockList');
+  if(!list.length){el.innerHTML='<div class="empty"><div class="empty-icon">📊</div>نمادی یافت نشد</div>';return}
+  el.innerHTML=list.slice(0,100).map(s=>{
+    const chg=(s.changePct||0).toFixed(1);
+    const cls=chg>=0?'up':'down';
+    const sc=s.totalScore||0;
+    const scCls=sc>80?'sc-sb':sc>60?'sc-b':sc>40?'sc-n':sc>20?'sc-s':'sc-ss';
+    return`<div class="tbl-row" onclick="showDetail('${s.code}')">
+      <div><div class="tbl-name">${s.name||'?'}</div><div class="tbl-sub">${fmtVol(s.volume)} حجم</div></div>
+      <div class="tbl-price">${fmt(s.price)}</div>
+      <div class="tbl-chg ${cls}">${chg>0?'+':''}${chg}%</div>
+      <div class="tbl-score"><div class="score-c ${scCls}">${sc}</div></div>
     </div>`;
   }).join('');
 }
 
-function showDetail(code) {
-  const s = stocks.find(x => x.code === code);
-  if (!s) return;
-  const chg = ((s.price - s.prevPrice) / s.prevPrice * 100).toFixed(1);
-  const cls = chg >= 0 ? 'up' : 'down';
-  const ind = s.indicators || {};
-  document.getElementById('modalContent').innerHTML = `
-    <h3>${s.name} (${s.code})</h3>
-    <div style="text-align:center;margin:12px 0">
-      <div style="font-size:28px;font-weight:900">${fmt(s.price)}</div>
-      <div class="${cls}" style="font-size:16px;font-weight:700">${chg > 0 ? '+' : ''}${chg}%</div>
-      <div style="margin-top:8px"><span class="score-badge ${s.totalScore > 80 ? 'score-sb' : s.totalScore > 60 ? 'score-b' : s.totalScore > 40 ? 'score-n' : 'score-s'}" style="width:56px;height:56px;font-size:18px">${s.totalScore}</span></div>
-      <div style="margin-top:4px;font-weight:700;color:var(--gold)">${s.signal}</div>
+function renderSummary(){
+  const up=allStocks.filter(s=>(s.changePct||0)>0).length;
+  const dn=allStocks.filter(s=>(s.changePct||0)<0).length;
+  const flat=allStocks.length-up-dn;
+  const avg=allStocks.length?Math.round(allStocks.reduce((a,s)=>a+(s.totalScore||0),0)/allStocks.length):0;
+  document.getElementById('mktSummary').innerHTML=`
+    <div class="mkt-box"><div class="val" style="color:var(--green)">${up}</div><div class="lbl">سبز</div></div>
+    <div class="mkt-box"><div class="val" style="color:var(--red)">${dn}</div><div class="lbl">قرمز</div></div>
+    <div class="mkt-box"><div class="val" style="color:var(--gold)">${avg}</div><div class="lbl">میانگین امتیاز</div></div>`;
+}
+
+function showDetail(code){
+  const s=allStocks.find(x=>x.code===code);if(!s)return;
+  const chg=(s.changePct||0).toFixed(1);const cls=chg>=0?'up':'down';
+  const ind=s.ind||{};
+  const scoreColor=s.totalScore>80?'var(--green)':s.totalScore>60?'var(--blue)':s.totalScore>40?'var(--text2)':'var(--red)';
+  document.getElementById('modalBody').innerHTML=`
+    <div class="modal-top">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div style="font-size:12px;color:var(--text2)">${s.code}</div>
+      <div style="font-size:22px;font-weight:900;margin:4px 0">${s.name||'?'}</div>
+      <div class="modal-price">${fmt(s.price)}</div>
+      <div class="modal-chg ${cls}">${chg>0?'+':''}${chg}%</div>
+      <div class="modal-score-ring"><div class="modal-score-val" style="color:${scoreColor}">${s.totalScore||0}</div></div>
+      <div style="font-weight:700;color:${scoreColor}">${s.signal||'نامشخص'}</div>
     </div>
-    <div class="detail-grid">
-      <div class="detail-item"><div class="lbl">تکنیکال</div><div class="val">${s.technicalScore}</div><div class="bar"><div class="bar-fill" style="width:${s.technicalScore}%;background:var(--gold)"></div></div></div>
-      <div class="detail-item"><div class="lbl">مومنتوم</div><div class="val">${s.momentumScore}</div><div class="bar"><div class="bar-fill" style="width:${s.momentumScore}%;background:var(--blue)"></div></div></div>
-      <div class="detail-item"><div class="lbl">نوسان</div><div class="val">${s.volatilityScore}</div><div class="bar"><div class="bar-fill" style="width:${s.volatilityScore}%;background:var(--green)"></div></div></div>
-      <div class="detail-item"><div class="lbl">حجم</div><div class="val">${s.volumeScore}</div><div class="bar"><div class="bar-fill" style="width:${s.volumeScore}%;background:var(--red)"></div></div></div>
+    <div class="score-section">
+      <div class="score-row"><span class="score-lbl">تکنیکال (35%)</span><div class="score-bar"><div class="score-bar-fill" style="width:${s.technicalScore||0}%;background:var(--gold)"></div></div><span class="score-num">${s.technicalScore||0}</span></div>
+      <div class="score-row"><span class="score-lbl">مومنتوم (30%)</span><div class="score-bar"><div class="score-bar-fill" style="width:${s.momentumScore||0}%;background:var(--blue)"></div></div><span class="score-num">${s.momentumScore||0}</span></div>
+      <div class="score-row"><span class="score-lbl">نوسان (15%)</span><div class="score-bar"><div class="score-bar-fill" style="width:${s.volatilityScore||0}%;background:var(--green)"></div></div><span class="score-num">${s.volatilityScore||0}</span></div>
+      <div class="score-row"><span class="score-lbl">حجم (20%)</span><div class="score-bar"><div class="score-bar-fill" style="width:${s.volumeScore||0}%;background:var(--orange)"></div></div><span class="score-num">${s.volumeScore||0}</span></div>
     </div>
-    <h3 style="color:var(--gold);margin:16px 0 8px">اندیکاتورها</h3>
-    <div class="stat-row"><span class="stat-label">RSI</span><span class="stat-val">${num(ind.rsi)}</span></div>
-    <div class="stat-row"><span class="stat-label">MACD هیستوگرام</span><span class="stat-val">${num(ind.macdHist)}</span></div>
-    <div class="stat-row"><span class="stat-label">ADX</span><span class="stat-val">${num(ind.adx)}</span></div>
-    <div class="stat-row"><span class="stat-label">CCI</span><span class="stat-val">${num(ind.cci)}</span></div>
-    <div class="stat-row"><span class="stat-label">MFI</span><span class="stat-val">${num(ind.mfi)}</span></div>
-    <div class="stat-row"><span class="stat-label">استوکاستیک K</span><span class="stat-val">${num(ind.stochK)}</span></div>
-    <div class="stat-row"><span class="stat-label">Williams %R</span><span class="stat-val">${num(ind.williamsR)}</span></div>
-    <div class="stat-row"><span class="stat-label">موقعیت بولینگر</span><span class="stat-val">${num(ind.bbPosition, 2)}</span></div>
-    <div class="stat-row"><span class="stat-label">حجم</span><span class="stat-val">${fmtVol(s.volume)}</span></div>
-    <button class="btn" onclick="closeModal()" style="width:100%;margin-top:16px">بستن</button>`;
-  document.getElementById('modal').classList.add('show');
+    <div class="ind-grid">
+      <div class="ind-item"><div class="ind-lbl">RSI</div><div class="ind-val">${num(ind.rsi)}</div><div class="ind-bar"><div class="ind-bar-fill" style="width:${(ind.rsi||50)}%;background:${ind.rsi>70?'var(--red)':ind.rsi<30?'var(--green)':'var(--gold)'}"></div></div></div>
+      <div class="ind-item"><div class="ind-lbl">MACD</div><div class="ind-val" style="color:${(ind.macdH||0)>0?'var(--green)':'var(--red)'}">${num(ind.macdH)}</div></div>
+      <div class="ind-item"><div class="ind-lbl">ADX</div><div class="ind-val">${num(ind.adx)}</div></div>
+      <div class="ind-item"><div class="ind-lbl">CCI</div><div class="ind-val" style="color:${(ind.cci||0)>100?'var(--green)':(ind.cci||0)<-100?'var(--red)':'var(--text)'}">${num(ind.cci)}</div></div>
+      <div class="ind-item"><div class="ind-lbl">MFI</div><div class="ind-val">${num(ind.mfi)}</div></div>
+      <div class="ind-item"><div class="ind-lbl">استوکاستیک</div><div class="ind-val">${num(ind.stochK)}</div></div>
+      <div class="ind-item"><div class="ind-lbl">Williams %R</div><div class="ind-val">${num(ind.wr)}</div></div>
+      <div class="ind-item"><div class="ind-lbl">بولینگر</div><div class="ind-val">${(ind.bbPos||0).toFixed(2)}</div></div>
+    </div>
+    <div style="padding:16px"><button class="btn btn-outline" onclick="closeModal()">بستن</button></div>`;
+  document.getElementById('detailModal').classList.add('show');
+}
+function closeModal(){document.getElementById('detailModal').classList.remove('show')}
+
+// ====== FILTER ======
+function addFilter(){
+  const ind=document.getElementById('fInd').value,op=document.getElementById('fOp').value,val=parseFloat(document.getElementById('fVal').value);
+  if(isNaN(val)){toast('مقدار رو وارد کن');return}
+  filters.push({indicator:ind,operator:op,value:val});renderChips();
+}
+function removeFilter(i){filters.splice(i,1);renderChips()}
+function clearFilters(){filters=[];renderChips()}
+function renderChips(){
+  const nm={totalScore:'امتیاز کل',technicalScore:'تکنیکال',momentumScore:'مومنتوم',volatilityScore:'نوسان',volumeScore:'حجم',rsi:'RSI',macdHist:'MACD',adx:'ADX',cci:'CCI',mfi:'MFI',stochK:'استوکاستیک',bbPos:'بولینگر'};
+  const op={gt:'>',lt:'<',gte:'≥',lte:'≤'};
+  document.getElementById('filterChips').innerHTML=filters.length?filters.map((f,i)=>`<div class="fchip">${nm[f.indicator]||f.indicator} ${op[f.operator]} ${f.value}<span class="fchip-x" onclick="removeFilter(${i})">✕</span></div>`).join(''):'';
+}
+function runFilter(){
+  if(!filters.length){toast('شرطی اضافه نشده');return}
+  filteredResults=allStocks.filter(s=>filters.every(f=>{
+    const val=f.indicator in (s.ind||{})?(s.ind||{})[f.indicator]:(s[f.indicator]||0);
+    switch(f.operator){case'gt':return val>f.value;case'lt':return val<f.value;case'gte':return val>=f.value;case'lte':return val<=f.value}
+  }));
+  renderResults();showTab('results',document.querySelectorAll('.nav button')[2]);
+  toast(`${filteredResults.length} نماد یافت شد`);
+}
+function renderResults(){
+  const el=document.getElementById('resultsContent');
+  if(!filteredResults.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>نتیجه‌ای نیست</div>';return}
+  el.innerHTML=`<div class="card"><div class="card-hdr"><h3>📊 ${filteredResults.length} نماد یافت شد</h3></div></div>`+filteredResults.map(s=>{
+    const chg=(s.changePct||0).toFixed(1);const cls=chg>=0?'up':'down';
+    const scCls=(s.totalScore||0)>80?'sc-sb':(s.totalScore||0)>60?'sc-b':(s.totalScore||0)>40?'sc-n':'sc-s';
+    return`<div class="result-card" onclick="showDetail('${s.code}')">
+      <div class="result-info"><div class="result-name">${s.name}</div><div class="result-price">${fmt(s.price)} | ${s.signal||''}</div></div>
+      <div><span class="tbl-chg ${cls}" style="margin-left:8px">${chg>0?'+':''}${chg}%</span><span class="score-c ${scCls}">${s.totalScore||0}</span></div>
+    </div>`;
+  }).join('');
 }
 
-function closeModal() { document.getElementById('modal').classList.remove('show'); }
-
-// ========== FILTERS ==========
-function addFilter() {
-  const ind = document.getElementById('fIndicator').value;
-  const op = document.getElementById('fOperator').value;
-  const val = parseFloat(document.getElementById('fValue').value);
-  if (isNaN(val)) { toast('مقدار را وارد کنید'); return; }
-  filters.push({ indicator: ind, operator: op, value: val });
-  renderFilterChips();
+function preset(type){
+  clearFilters();
+  const map={oversold:[{i:'rsi',o:'lt',v:30}],overbought:[{i:'rsi',o:'gt',v:70}],trend:[{i:'adx',o:'gt',v:25}],buy:[{i:'totalScore',o:'gt',v:60}],vol:[{i:'volumeScore',o:'gt',v:65}],top:[{i:'totalScore',o:'gt',v:75}]};
+  (map[type]||[]).forEach(f=>filters.push({indicator:f.i,operator:f.o,value:f.v}));
+  renderChips();runFilter();
 }
 
-function removeFilter(i) { filters.splice(i, 1); renderFilterChips(); }
-function clearFilters() { filters = []; renderFilterChips(); }
-
-function renderFilterChips() {
-  const names = { totalScore:'امتیاز کل', technicalScore:'تکنیکال', momentumScore:'مومنتوم', volatilityScore:'نوسان', volumeScore:'حجم', rsi:'RSI', macdHist:'MACD', adx:'ADX', cci:'CCI', mfi:'MFI', stochK:'استوکاستیک', williamsR:'Williams %R', bbPosition:'بولینگر', priceVsSMA20:'قیمت vs SMA20' };
-  const ops = { gt:'>', lt:'<', gte:'≥', lte:'≤', eq:'=' };
-  document.getElementById('filterChips').innerHTML = filters.length ? filters.map((f, i) =>
-    `<div class="filter-chip active">${names[f.indicator] || f.indicator} ${ops[f.operator]} ${f.value} <span class="x" onclick="removeFilter(${i})">✕</span></div>`
-  ).join('') : '<span style="color:var(--text2);font-size:13px">شرطی اضافه نشده</span>';
+// ====== TABS ======
+function showTab(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(btn)btn.classList.add('active');
 }
+function setSort(s,el){currentSort=s;document.querySelectorAll('.sort-chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');renderMarket()}
+function filterList(){renderMarket()}
 
-function runFilters() {
-  if (!filters.length) { toast('اول شرط اضافه کنید'); return; }
-  results = stocks.filter(s => {
-    return filters.every(f => {
-      let val;
-      if (['rsi','macdHist','adx','cci','mfi','stochK','williamsR','bbPosition','priceVsSMA20'].includes(f.indicator)) {
-        val = (s.indicators || {})[f.indicator] || 0;
-      } else { val = s[f.indicator] || 0; }
-      switch (f.operator) {
-        case 'gt': return val > f.value;
-        case 'lt': return val < f.value;
-        case 'gte': return val >= f.value;
-        case 'lte': return val <= f.value;
-        case 'eq': return val === f.value;
-      }
-    });
-  });
-  renderResults();
-  showTab('results');
-  toast(`${results.length} سهم یافت شد ✓`);
-}
+// ====== UTILS ======
+function fmt(n){return n?Math.round(n).toLocaleString('fa-IR'):'0'}
+function fmtVol(n){return n>=1e9?(n/1e9).toFixed(1)+'B':n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(0)+'K':n}
+function num(v,d){return v!=null?Number(v).toFixed(d||1):'-'}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function updateConnection(online){document.getElementById('connDot').className='conn-dot'+(online?' on':'');document.getElementById('connText').textContent=online?'متصل':'آفلاین'}
+function testConnection(){fetch(API_BASE+'/MarketData/GetMarketOverview',{method:'HEAD'}).then(()=>toast('✅ اتصال برقرار شد')).catch(()=>toast('❌ اتصال برقرار نشد'))}
+function saveConfig(){CFG.rsi=+document.getElementById('cfgRSI').value;CFG.macd=+document.getElementById('cfgMACD').value;CFG.sma=+document.getElementById('cfgSMA').value;CFG.adx=+document.getElementById('cfgADX').value;localStorage.setItem('f_cfg',JSON.stringify(CFG));toast('تنظیمات ذخیره شد');fetchMarketData()}
+function exportData(){let csv='Name,Code,Price,Change%,Score,Technical,Momentum,Volatility,VolumeScore,Signal\n';allStocks.forEach(s=>{csv+=`${s.name},${s.code},${s.price.toFixed(0)},${(s.changePct||0).toFixed(2)},${s.totalScore},${s.technicalScore},${s.momentumScore},${s.volatilityScore},${s.volumeScore},${s.signal}\n`});const b=new Blob(['\ufeff'+csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='filteradium.csv';a.click();toast('خروجی CSV ✓')}
 
-function renderResults() {
-  const el = document.getElementById('resultsContent');
-  if (!results.length) { el.innerHTML = '<div class="empty"><div class="icon">🔍</div>نتیجه‌ای نیست. فیلتر اجرا کنید.</div>'; return; }
-  el.innerHTML = `<div class="card"><h3 style="color:var(--gold);margin-bottom:8px">📊 نتایج فیلتر (${results.length} سهم)</h3></div>` +
-    results.map(s => {
-      const chg = ((s.price - s.prevPrice) / s.prevPrice * 100).toFixed(1);
-      const cls = chg >= 0 ? 'up' : 'down';
-      const sCls = s.totalScore > 80 ? 'score-sb' : s.totalScore > 60 ? 'score-b' : s.totalScore > 40 ? 'score-n' : 'score-s' : 'score-ss';
-      return `<div class="card" onclick="showDetail('${s.code}')" style="cursor:pointer">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div><div class="stock-name">${s.name}</div><div class="${cls}" style="font-size:13px">${fmt(s.price)} (${chg > 0 ? '+' : ''}${chg}%)</div></div>
-          <div style="text-align:center"><div class="score-badge ${sCls}">${s.totalScore}</div><div class="signal">${s.signal}</div></div>
-        </div></div>`;
-    }).join('');
-}
-
-// ========== PRESETS ==========
-function presetOversold() { clearFilters(); filters.push({ indicator:'rsi', operator:'lt', value:30 }); renderFilterChips(); runFilters(); }
-function presetOverbought() { clearFilters(); filters.push({ indicator:'rsi', operator:'gt', value:70 }); renderFilterChips(); runFilters(); }
-function presetStrongTrend() { clearFilters(); filters.push({ indicator:'adx', operator:'gt', value:25 }, { indicator:'technicalScore', operator:'gt', value:60 }); renderFilterChips(); runFilters(); }
-function presetBullish() { clearFilters(); filters.push({ indicator:'totalScore', operator:'gt', value:60 }, { indicator:'rsi', operator:'gt', value:50 }); renderFilterChips(); runFilters(); }
-function presetVolumeSurge() { clearFilters(); filters.push({ indicator:'volumeScore', operator:'gt', value:60 }); renderFilterChips(); runFilters(); }
-function presetGoodScore() { clearFilters(); filters.push({ indicator:'totalScore', operator:'gt', value:70 }); renderFilterChips(); runFilters(); }
-
-// ========== TABS ==========
-function showTab(name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  document.querySelectorAll('.nav button').forEach(b => { if (b.textContent.includes({market:'بازار',screener:'فیلتر',results:'نتایج',settings:'تنظیمات'}[name])) b.classList.add('active'); });
-}
-
-// ========== SETTINGS ==========
-function saveSettings() {
-  toast('تنظیمات ذخیره شد ✓');
-  recalcAll();
-}
-
-// ========== IO ==========
-function exportCSV() {
-  let csv = 'Name,Code,Price,Change%,TotalScore,Technical,Momentum,Volatility,VolumeScore,Signal\n';
-  stocks.forEach(s => {
-    const chg = ((s.price - s.prevPrice) / s.prevPrice * 100).toFixed(2);
-    csv += `${s.name},${s.code},${s.price.toFixed(0)},${chg},${s.totalScore},${s.technicalScore},${s.momentumScore},${s.volatilityScore},${s.volumeScore},${s.signal}\n`;
-  });
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'filteradium_export.csv';
-  a.click();
-  toast('خروجی CSV ✓');
-}
-
-function importCSV(e) {
-  toast('ورودی CSV پشتیبانی نمی‌شود (فقط خروجی)');
-}
-
-// ========== UTILS ==========
-function fmt(n) { return n ? n.toLocaleString('fa-IR') : '0'; }
-function fmtVol(n) { return n > 1e6 ? (n / 1e6).toFixed(1) + 'M' : n > 1e3 ? (n / 1e3).toFixed(0) + 'K' : n; }
-function num(v, d) { return v !== null && v !== undefined ? Number(v).toFixed(d || 1) : '-'; }
-function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
-
-// Init
-init();
+// ====== INIT ======
+fetchMarketData();
 </script>
 </body>
 </html>
