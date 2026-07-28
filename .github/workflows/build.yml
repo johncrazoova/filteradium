@@ -15,18 +15,22 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - name: Build debug APK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          build-tools: '34.0.0'
+          packages: 'build-tools;34.0.0 platforms;android-34'
+      - name: Build APK
         working-directory: ./android
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
-      - name: Rename APK
-        run: mv android/app/build/outputs/apk/debug/app-debug.apk Filteradium.apk
-      - uses: actions/upload-artifact@v4
+          ./gradlew assembleDebug --no-daemon
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: Filteradium-Android
-          path: Filteradium.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
 
   build-windows:
     runs-on: windows-latest
