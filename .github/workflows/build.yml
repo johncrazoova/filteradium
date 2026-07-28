@@ -1,4 +1,4 @@
-name: Build & Release Desktop Apps
+name: Build All Platforms
 
 on:
   push:
@@ -7,6 +7,35 @@ on:
   workflow_dispatch:
 
 jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Build APK
+        working-directory: ./android
+        run: |
+          aapt package -f -m -J app/src/main/java -M app/src/main/AndroidManifest.xml -S app/src/main/res -I $ANDROID_HOME/platforms/android-34/android.jar
+          mkdir -p app/build/classes
+          find app/src/main/java -name "*.java" > /tmp/sources.txt
+          javac -source 1.8 -target 1.8 -classpath $ANDROID_HOME/platforms/android-34/android.jar -d app/build/classes @/tmp/sources.txt
+          d8 --output app/build/ --lib $ANDROID_HOME/platforms/android-34/android.jar --min-api 24 $(find app/build/classes -name "*.class")
+          mkdir -p app/build/apk && cd app/build/apk
+          cp ../../src/main/AndroidManifest.xml .
+          aapt package -f -M AndroidManifest.xml -S ../../src/main/res -I $ANDROID_HOME/platforms/android-34/android.jar -F unsigned.apk
+          cp ../classes.dex .
+          python3 -c "import zipfile; z=zipfile.ZipFile('unsigned.apk','a'); z.write('classes.dex'); z.close()"
+          keytool -genkey -v -keystore release.keystore -alias filteradium -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Filteradium" 2>/dev/null
+          apksigner sign --ks release.keystore --ks-pass pass:android --key-pass pass:android --out Filteradium.apk unsigned.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Filteradium-Android
+          path: android/app/build/apk/Filteradium.apk
+
   build-windows:
     runs-on: windows-latest
     steps:
@@ -14,32 +43,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install and Build Windows
-        working-directory: ./desktop
-        run: |
-          npm install
-          npx electron-builder --win portable
+      - working-directory: ./desktop
+        run: npm install && npx electron-builder --win portable
       - uses: actions/upload-artifact@v4
         with:
           name: Filteradium-Windows
           path: desktop/dist/*.exe
-
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Install and Build macOS
-        working-directory: ./desktop
-        run: |
-          npm install
-          npx electron-builder --mac dir
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Filteradium-macOS
-          path: desktop/dist/mac*/
 
   build-linux:
     runs-on: ubuntu-latest
@@ -48,20 +57,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install and Build Linux
-        working-directory: ./desktop
-        run: |
-          npm install
-          npx electron-builder --linux AppImage
+      - working-directory: ./desktop
+        run: npm install && npx electron-builder --linux AppImage
       - uses: actions/upload-artifact@v4
         with:
           name: Filteradium-Linux
           path: desktop/dist/*.AppImage
 
   release:
-    needs: [build-windows, build-macos, build-linux]
+    needs: [build-android, build-windows, build-linux]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: always() && startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
     steps:
@@ -69,12 +75,8 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: ./artifacts
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - uses: softprops/action-gh-release@v1
         with:
-          files: |
-            ./artifacts/Filteradium-Windows/*
-            ./artifacts/Filteradium-macOS/*
-            ./artifacts/Filteradium-Linux/*
+          files: ./artifacts/**/*
           draft: false
           prerelease: false
