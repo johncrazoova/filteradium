@@ -205,6 +205,37 @@ body {
   border-color: var(--accent);
 }
 
+.full-width {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.stats-panel .stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.stat {
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+}
+
+.stat-num {
+  display: block;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
 /* Symbol List */
 .symbol-list {
   max-height: 200px;

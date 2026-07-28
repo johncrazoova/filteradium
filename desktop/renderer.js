@@ -10,9 +10,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadSectors();
   setDefaultDates();
   setupRadioListeners();
+  updateStats();
 });
 
-// ========== Load Data ==========
+// ========== Load from Local DB ==========
 async function loadStocks() {
   allStocks = await window.api.getStocks();
   renderSymbolList(allStocks);
@@ -21,6 +22,8 @@ async function loadStocks() {
 async function loadSectors() {
   const sectors = await window.api.getSectors();
   const select = document.getElementById('sectorFilter');
+  // Clear old options except first
+  while (select.options.length > 1) select.remove(1);
   sectors.forEach(s => {
     if (s.sector) {
       const opt = document.createElement('option');
@@ -31,12 +34,68 @@ async function loadSectors() {
   });
 }
 
-// ========== UI Setup ==========
+async function updateStats() {
+  const stats = await window.api.getStats();
+  document.getElementById('statStocks').textContent = stats.stocks;
+  document.getElementById('statHistory').textContent = stats.history;
+  document.getElementById('statClients').textContent = stats.clientType;
+  document.getElementById('statShareholders').textContent = stats.shareholders;
+}
+
+// ========== Fetch from TSETMC ==========
+async function fetchAllStocks() {
+  const btn = document.getElementById('btnFetchStocks');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ در حال دریافت...';
+
+  try {
+    const result = await window.api.fetchAllStocks();
+    if (result.success) {
+      alert(`✅ ${result.count} نماد دریافت شد`);
+      await loadStocks();
+      await loadSectors();
+      await updateStats();
+    } else {
+      alert('❌ خطا: ' + result.error);
+    }
+  } catch (e) {
+    alert('❌ خطا: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔄 دریافت لیست نمادها';
+  }
+}
+
+async function fetchStockHistory(insCode) {
+  try {
+    const result = await window.api.fetchHistory(insCode);
+    return result;
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+async function fetchStockClientType(insCode) {
+  try {
+    return await window.api.fetchClientType(insCode);
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+async function fetchStockShareholders(insCode) {
+  try {
+    return await window.api.fetchShareholders(insCode);
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// ========== UI ==========
 function setDefaultDates() {
   const today = new Date();
   const yearAgo = new Date();
   yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-
   document.getElementById('endDate').value = today.toISOString().split('T')[0];
   document.getElementById('startDate').value = yearAgo.toISOString().split('T')[0];
 }
@@ -45,7 +104,6 @@ function setQuickDate(days) {
   const today = new Date();
   const past = new Date();
   past.setDate(past.getDate() - days);
-
   document.getElementById('endDate').value = today.toISOString().split('T')[0];
   document.getElementById('startDate').value = past.toISOString().split('T')[0];
 }
@@ -68,23 +126,16 @@ function renderSymbolList(stocks) {
 
   const searchTerm = document.getElementById('symbolSearch').value.toLowerCase();
   const sectorFilter = document.getElementById('sectorFilter').value;
-  const marketFilter = document.getElementById('marketType').value;
 
   let filtered = stocks;
-
   if (searchTerm) {
     filtered = filtered.filter(s =>
-      s.symbol.toLowerCase().includes(searchTerm) ||
-      s.name.toLowerCase().includes(searchTerm)
+      (s.symbol || '').toLowerCase().includes(searchTerm) ||
+      (s.name || '').toLowerCase().includes(searchTerm)
     );
   }
-
   if (sectorFilter !== 'all') {
     filtered = filtered.filter(s => s.sector === sectorFilter);
-  }
-
-  if (marketFilter !== 'all') {
-    filtered = filtered.filter(s => s.market_type == marketFilter);
   }
 
   filtered.forEach(stock => {
@@ -92,7 +143,7 @@ function renderSymbolList(stocks) {
     item.className = `symbol-item ${selectedStocks.includes(stock.ins_code) ? 'selected' : ''}`;
     item.innerHTML = `
       <input type="checkbox" ${selectedStocks.includes(stock.ins_code) ? 'checked' : ''}>
-      <span class="symbol-name">${stock.symbol}</span>
+      <span class="symbol-name">${stock.symbol || '?'}</span>
       <span class="symbol-code">${stock.sector || ''}</span>
     `;
     item.onclick = () => toggleStock(stock.ins_code);
@@ -102,106 +153,72 @@ function renderSymbolList(stocks) {
 
 function toggleStock(insCode) {
   const idx = selectedStocks.indexOf(insCode);
-  if (idx === -1) {
-    selectedStocks.push(insCode);
-  } else {
-    selectedStocks.splice(idx, 1);
-  }
+  if (idx === -1) selectedStocks.push(insCode);
+  else selectedStocks.splice(idx, 1);
   renderSymbolList(allStocks);
 }
 
-// Search filter
-document.getElementById('symbolSearch').addEventListener('input', () => {
-  renderSymbolList(allStocks);
-});
-
-// Sector filter
-document.getElementById('sectorFilter').addEventListener('change', () => {
-  renderSymbolList(allStocks);
-});
-
-// Market filter
-document.getElementById('marketType').addEventListener('change', () => {
-  renderSymbolList(allStocks);
-});
-
-// Select all / deselect all
-function selectAll() {
-  const filtered = getFilteredStocks();
-  selectedStocks = filtered.map(s => s.ins_code);
-  renderSymbolList(allStocks);
-}
-
-function deselectAll() {
-  selectedStocks = [];
-  renderSymbolList(allStocks);
-}
+document.getElementById('symbolSearch').addEventListener('input', () => renderSymbolList(allStocks));
+document.getElementById('sectorFilter').addEventListener('change', () => renderSymbolList(allStocks));
 
 function getFilteredStocks() {
-  const sectorFilter = document.getElementById('sectorFilter').value;
-  const marketFilter = document.getElementById('marketType').value;
-
+  const sector = document.getElementById('sectorFilter').value;
   let filtered = allStocks;
-  if (sectorFilter !== 'all') filtered = filtered.filter(s => s.sector === sectorFilter);
-  if (marketFilter !== 'all') filtered = filtered.filter(s => s.market_type == marketFilter);
+  if (sector !== 'all') filtered = filtered.filter(s => s.sector === sector);
   return filtered;
 }
 
-// ========== Fetch Data ==========
+// ========== Fetch & Display Data ==========
 async function fetchData() {
   const btn = document.getElementById('btnFetch');
   btn.disabled = true;
-  btn.innerHTML = '<span class="btn-icon">⏳</span> در حال دریافت...';
+  btn.innerHTML = '⏳ دریافت...';
 
   try {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
     const insCodes = selectedStocks.length > 0 ? selectedStocks : getFilteredStocks().map(s => s.ins_code);
 
-    const params = { insCodes, startDate, endDate };
+    if (insCodes.length === 0) {
+      alert('لطفاً نمادی رو انتخاب کنید');
+      return;
+    }
 
+    // First fetch history for selected stocks
+    let fetched = 0;
+    for (const code of insCodes) {
+      document.getElementById('btnFetch').innerHTML = `⏳ ${++fetched}/${insCodes.length}`;
+      await fetchStockHistory(code);
+      if (currentDataType === 'client') await fetchStockClientType(code);
+      if (currentDataType === 'shareholder') await fetchStockShareholders(code);
+    }
+
+    // Then query local DB
+    const params = { insCodes, startDate, endDate };
     let data = [];
+
     switch (currentDataType) {
       case 'price':
         data = await window.api.getPriceHistory(params);
-        // Enrich with symbol names
-        data = data.map(row => {
-          const stock = allStocks.find(s => s.ins_code === row.ins_code);
-          return { ...row, symbol: stock?.symbol || row.ins_code };
-        });
         break;
       case 'client':
         data = await window.api.getClientType(params);
-        data = data.map(row => {
-          const stock = allStocks.find(s => s.ins_code === row.ins_code);
-          return { ...row, symbol: stock?.symbol || row.ins_code };
-        });
         break;
       case 'shareholder':
         data = await window.api.getShareholders(params);
-        data = data.map(row => {
-          const stock = allStocks.find(s => s.ins_code === row.ins_code);
-          return { ...row, symbol: stock?.symbol || row.ins_code };
-        });
-        break;
-      case 'orderbook':
-        data = await window.api.getOrderBook(params);
-        data = data.map(row => {
-          const stock = allStocks.find(s => s.ins_code === row.ins_code);
-          return { ...row, symbol: stock?.symbol || row.ins_code };
-        });
         break;
     }
 
     currentData = data;
     renderTable(data);
-    updateButtons(data.length > 0);
+    document.getElementById('btnCSV').disabled = data.length === 0;
+    document.getElementById('btnExcel').disabled = data.length === 0;
   } catch (e) {
-    console.error(e);
-    alert('خطا در دریافت داده: ' + e.message);
+    alert('❌ خطا: ' + e.message);
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<span class="btn-icon">🔄</span> دریافت داده';
+    btn.innerHTML = '🔄 دریافت و نمایش داده';
+    await updateStats();
   }
 }
 
@@ -223,13 +240,10 @@ function renderTable(data) {
   empty.classList.add('hidden');
   count.textContent = `${data.length.toLocaleString('fa-IR')} رکورد`;
 
-  // Headers
   const keys = Object.keys(data[0]);
-  const headers = keys.map(k => `<th>${translateKey(k)}</th>`).join('');
-  head.innerHTML = `<tr>${headers}</tr>`;
+  head.innerHTML = `<tr>${keys.map(k => `<th>${translateKey(k)}</th>`).join('')}</tr>`;
 
-  // Rows (max 1000 for performance)
-  const rows = data.slice(0, 1000).map(row => {
+  const rows = data.slice(0, 2000).map(row => {
     const cells = keys.map(k => {
       const val = row[k];
       let cls = '';
@@ -249,85 +263,35 @@ function renderTable(data) {
   body.innerHTML = rows;
 }
 
-// ========== Translation ==========
 function translateKey(key) {
-  const translations = {
-    'id': 'شناسه',
-    'ins_code': 'کد نماد',
-    'symbol': 'نماد',
-    'date': 'تاریخ',
-    'open': 'اولین',
-    'high': 'بیشترین',
-    'low': 'کمترین',
-    'close': 'پایانی',
-    'last': 'آخرین',
-    'volume': 'حجم',
-    'value': 'ارزش',
-    'change': 'تغییر',
-    'change_pct': 'تغییر %',
-    'trade_count': 'تعداد معامله',
-    'individual_buy_count': 'تعداد خرید حقیقی',
-    'individual_sell_count': 'تعداد فروش حقیقی',
-    'individual_buy_volume': 'حجم خرید حقیقی',
-    'individual_sell_volume': 'حجم فروش حقیقی',
-    'corporate_buy_count': 'تعداد خرید حقوقی',
-    'corporate_sell_count': 'تعداد فروش حقوقی',
-    'corporate_buy_volume': '_volume خرید حقوقی',
-    'corporate_sell_volume': 'حجم فروش حقوقی',
-    'data': 'داده سهام‌داران',
-    'timestamp': 'زمان',
-    'total_demand': 'کل تقاضا',
-    'total_supply': 'کل عرضه',
+  const t = {
+    'id': 'شناسه', 'ins_code': 'کد', 'symbol': 'نماد', 'date': 'تاریخ',
+    'open': 'اولین', 'high': 'بیشترین', 'low': 'کمترین', 'close': 'پایانی',
+    'last': 'آخرین', 'volume': 'حجم', 'value': 'ارزش', 'change': 'تغییر',
+    'change_pct': 'تغییر%', 'name': 'نام', 'sector': 'صنعت',
+    'individual_buy_count': 'تعداد خرید حقیقی', 'individual_sell_count': 'تعداد فروش حقیقی',
+    'individual_buy_volume': 'حجم خرید حقیقی', 'individual_sell_volume': 'حجم فروش حقیقی',
+    'corporate_buy_count': 'تعداد خرید حقوقی', 'corporate_sell_count': 'تعداد فروش حقوقی',
+    'corporate_buy_volume': 'حجم خرید حقوقی', 'corporate_sell_volume': 'حجم فروش حقوقی',
+    'data': 'داده سهامداران', 'updated_at': 'بروزرسانی'
   };
-  return translations[key] || key;
+  return t[key] || key;
 }
 
 // ========== Export ==========
-function updateButtons(enabled) {
-  document.getElementById('btnCSV').disabled = !enabled;
-  document.getElementById('btnExcel').disabled = !enabled;
-  document.getElementById('btnExcelAll').disabled = !enabled;
-}
-
 async function exportCSV() {
   if (currentData.length === 0) return;
-
-  const typeName = { price: 'قیمت', client: 'حقیقی_حقوقی', shareholder: 'سهامداران', orderbook: 'تابلو' };
-  const filename = `filteradium_${typeName[currentDataType]}_${new Date().toISOString().split('T')[0]}.csv`;
-
+  const names = { price: 'قیمت', client: 'حقیقی_حقوقی', shareholder: 'سهامداران' };
+  const filename = `filteradium_${names[currentDataType]}_${new Date().toISOString().split('T')[0]}.csv`;
   const result = await window.api.exportCSV({ data: currentData, filename });
-  if (result.success) {
-    alert(`فایل ذخیره شد:\n${result.path}`);
-  }
+  if (result.success) alert(`✅ ذخیره شد:\n${result.path}`);
 }
 
 async function exportExcel() {
   if (currentData.length === 0) return;
-
-  const typeName = { price: 'قیمت', client: 'حقیقی_حقوقی', shareholder: 'سهامداران', orderbook: 'تابلو' };
-  const sheetNames = { price: 'Price', client: 'ClientType', shareholder: 'Shareholders', orderbook: 'OrderBook' };
-  const filename = `filteradium_${typeName[currentDataType]}_${new Date().toISOString().split('T')[0]}.xlsx`;
-
-  const result = await window.api.exportExcel({
-    data: currentData,
-    filename,
-    sheetName: sheetNames[currentDataType]
-  });
-  if (result.success) {
-    alert(`فایل ذخیره شد:\n${result.path}`);
-  }
-}
-
-async function exportExcelAll() {
-  if (currentData.length === 0) return;
-
-  const filename = `filteradium_all_${new Date().toISOString().split('T')[0]}.xlsx`;
-  const sheets = [
-    { name: 'Price', data: currentData }
-  ];
-
-  const result = await window.api.exportExcelMulti({ sheets, filename });
-  if (result.success) {
-    alert(`فایل ذخیره شد:\n${result.path}`);
-  }
+  const names = { price: 'قیمت', client: 'حقیقی_حقوقی', shareholder: 'سهامداران' };
+  const sheets = { price: 'Price', client: 'ClientType', shareholder: 'Shareholders' };
+  const filename = `filteradium_${names[currentDataType]}_${new Date().toISOString().split('T')[0]}.xlsx`;
+  const result = await window.api.exportExcel({ data: currentData, filename, sheetName: sheets[currentDataType] });
+  if (result.success) alert(`✅ ذخیره شد:\n${result.path}`);
 }
