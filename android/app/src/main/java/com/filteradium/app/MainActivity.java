@@ -11,7 +11,6 @@ import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
     private WebView webView;
-    private static final String SERVER_URL = "http://10.0.2.2:8000";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,11 +34,13 @@ public class MainActivity extends Activity {
         settings.setSupportZoom(false);
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
+        settings.setAllowFileAccess(true);
         
         webView.setWebViewClient(new AppWebViewClient());
         webView.setWebChromeClient(new AppChromeClient());
         
-        webView.loadUrl(SERVER_URL);
+        // Load from local assets (no server needed!)
+        webView.loadUrl("file:///android_asset/www/index.html");
     }
 
     @Override
