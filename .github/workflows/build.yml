@@ -16,26 +16,33 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - uses: android-actions/setup-android@v3
-        with:
-          api-level: 34
-          build-tools: '34.0.0'
-          packages: 'build-tools;34.0.0 platforms;android-34'
       - name: Build APK
         run: |
+          echo "=== SDK Location ==="
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls $ANDROID_HOME/platforms/
+          ls $ANDROID_HOME/build-tools/
           cd android
           rm -rf app/build
+          echo "=== Generating R.java ==="
           aapt package -f -m -J app/src/main/java -M app/src/main/AndroidManifest.xml -S app/src/main/res -I $ANDROID_HOME/platforms/android-34/android.jar
+          echo "=== Compiling ==="
           mkdir -p app/build/classes
           find app/src/main/java -name "*.java" > /tmp/sources.txt
+          cat /tmp/sources.txt
           javac -source 1.8 -target 1.8 -classpath $ANDROID_HOME/platforms/android-34/android.jar -d app/build/classes @/tmp/sources.txt
+          echo "=== Creating DEX ==="
           d8 --output app/build/ --lib $ANDROID_HOME/platforms/android-34/android.jar --min-api 24 $(find app/build/classes -name "*.class")
+          echo "=== Packaging ==="
           mkdir -p app/build/apk && cd app/build/apk
           cp ../../src/main/AndroidManifest.xml .
           aapt package -f -M AndroidManifest.xml -S ../../src/main/res -I $ANDROID_HOME/platforms/android-34/android.jar -F unsigned.apk
           cp ../classes.dex .
           python3 -c "import zipfile; z=zipfile.ZipFile('unsigned.apk','a'); z.write('classes.dex'); z.close()"
-          keytool -genkey -v -keystore release.keystore -alias filteradium -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Filteradium,OU=Dev,O=Filteradium,L=Tehran,ST=Tehran,C=IR"
+          echo "=== Signing ==="
+          keytool -genkey -v -keystore release.keystore -alias filteradium -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Filteradium"
           apksigner sign --ks release.keystore --ks-pass pass:android --key-pass pass:android --out Filteradium.apk unsigned.apk
+          echo "=== Done ==="
           ls -lh Filteradium.apk
       - uses: actions/upload-artifact@v4
         with:
