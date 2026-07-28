@@ -16,28 +16,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - uses: android-actions/setup-android@v3
-      - name: Build APK
+      - name: Build debug APK
+        working-directory: ./android
         run: |
-          export PATH=$ANDROID_HOME/build-tools/34.0.0:$ANDROID_HOME/platform-tools:$PATH
-          cd android
-          rm -rf app/build
-          aapt package -f -m -J app/src/main/java -M app/src/main/AndroidManifest.xml -S app/src/main/res -I $ANDROID_HOME/platforms/android-34/android.jar
-          mkdir -p app/build/classes
-          find app/src/main/java -name "*.java" > /tmp/sources.txt
-          javac -source 1.8 -target 1.8 -classpath $ANDROID_HOME/platforms/android-34/android.jar -d app/build/classes @/tmp/sources.txt
-          d8 --output app/build/ --lib $ANDROID_HOME/platforms/android-34/android.jar --min-api 24 $(find app/build/classes -name "*.class")
-          mkdir -p app/build/apk && cd app/build/apk
-          cp ../../src/main/AndroidManifest.xml .
-          aapt package -f -M AndroidManifest.xml -S ../../src/main/res -I $ANDROID_HOME/platforms/android-34/android.jar -F unsigned.apk
-          cp ../classes.dex .
-          python3 -c "import zipfile; z=zipfile.ZipFile('unsigned.apk','a'); z.write('classes.dex'); z.close()"
-          keytool -genkey -v -keystore release.keystore -alias filteradium -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Filteradium"
-          apksigner sign --ks release.keystore --ks-pass pass:android --key-pass pass:android --out Filteradium.apk unsigned.apk
-          ls -lh Filteradium.apk
+          chmod +x gradlew
+          ./gradlew assembleDebug
+      - name: Rename APK
+        run: mv android/app/build/outputs/apk/debug/app-debug.apk Filteradium.apk
       - uses: actions/upload-artifact@v4
         with:
           name: Filteradium-Android
-          path: android/app/build/apk/Filteradium.apk
+          path: Filteradium.apk
 
   build-windows:
     runs-on: windows-latest
