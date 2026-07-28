@@ -1,109 +1,698 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>فیلترادیوم | پلتفرم فیلترنویسی هوشمند بورس</title>
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
-  <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
-  <link rel="stylesheet" href="styles/main.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FILTERADIUM</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0A0A1A;--card:#1A1A2E;--card2:#16213E;--gold:#D4AF37;--gold2:#B8941F;--text:#E8E8E8;--text2:#888;--green:#00C853;--red:#FF1744;--blue:#448AFF;--border:#2A2A3E}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl}
+.header{background:linear-gradient(135deg,#0D0D2B,#1A1A3E);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gold);position:sticky;top:0;z-index:100}
+.logo{font-size:22px;font-weight:900;color:var(--gold);letter-spacing:3px}
+.logo span{color:var(--text);font-size:14px;font-weight:400;margin-right:8px}
+.nav{display:flex;gap:4px}
+.nav button{background:transparent;border:none;color:var(--text2);padding:10px 16px;cursor:pointer;font-size:13px;border-radius:8px;transition:.2s}
+.nav button.active{background:var(--gold);color:#000;font-weight:700}
+.nav button:hover{background:var(--card2)}
+.tab{display:none;padding:16px;max-width:1200px;margin:0 auto}
+.tab.active{display:block}
+.card{background:var(--card);border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid var(--border);transition:.2s}
+.card:hover{border-color:var(--gold)}
+.stock-row{display:grid;grid-template-columns:1fr 80px 80px 100px 80px;align-items:center;padding:12px;gap:8px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s}
+.stock-row:hover{background:var(--card2)}
+.stock-name{font-weight:700;font-size:15px}
+.stock-price{font-size:14px;text-align:center}
+.stock-change{font-size:13px;text-align:center;font-weight:600}
+.up{color:var(--green)}.down{color:var(--red)}
+.score-badge{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;font-weight:900;font-size:14px;border:2px solid}
+.score-sb{background:rgba(0,200,83,.15);color:var(--green);border-color:var(--green)}
+.score-b{background:rgba(68,138,255,.15);color:var(--blue);border-color:var(--blue)}
+.score-n{background:rgba(255,255,255,.08);color:var(--text2);border-color:var(--text2)}
+.score-s{background:rgba(255,23,68,.1);color:var(--red);border-color:var(--red)}
+.score-ss{background:rgba(255,23,68,.2);color:var(--red);border-color:var(--red)}
+.signal{font-size:11px;font-weight:700;margin-top:2px}
+.btn{background:var(--gold);color:#000;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;transition:.2s}
+.btn:hover{background:var(--gold2)}
+.btn-outline{background:transparent;border:1px solid var(--gold);color:var(--gold)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-sm{padding:6px 12px;font-size:12px}
+input,select{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;font-size:13px;width:100%;direction:rtl}
+input:focus,select:focus{outline:none;border-color:var(--gold)}
+label{font-size:12px;color:var(--text2);margin-bottom:4px;display:block}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.filter-chip{display:inline-flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);padding:6px 14px;border-radius:20px;font-size:12px;margin:4px;cursor:pointer;transition:.2s}
+.filter-chip.active{border-color:var(--gold);background:rgba(212,175,55,.1);color:var(--gold)}
+.filter-chip .x{color:var(--red);cursor:pointer;font-weight:700}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.detail-item{background:var(--card2);padding:12px;border-radius:8px;text-align:center}
+.detail-item .val{font-size:20px;font-weight:900;color:var(--gold);margin:4px 0}
+.detail-item .lbl{font-size:11px;color:var(--text2)}
+.bar{height:6px;background:var(--card2);border-radius:3px;overflow:hidden;margin-top:6px}
+.bar-fill{height:100%;border-radius:3px;transition:width .5s}
+.search{position:relative}
+.search input{padding-right:36px}
+.search::before{content:'🔍';position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:14px}
+.stat-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.stat-row:last-child{border:none}
+.stat-label{color:var(--text2);font-size:13px}
+.stat-val{font-weight:700;font-size:14px}
+.empty{text-align:center;padding:60px 20px;color:var(--text2)}
+.empty .icon{font-size:48px;margin-bottom:12px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;padding:12px 24px;border-radius:8px;font-weight:700;font-size:13px;z-index:999;opacity:0;transition:.3s}
+.toast.show{opacity:1}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border-radius:16px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;border:1px solid var(--gold)}
+.modal h3{color:var(--gold);margin-bottom:16px}
+@media(max-width:600px){
+  .stock-row{grid-template-columns:1fr 60px 60px 80px 60px;font-size:12px}
+  .form-row,.form-row-3{grid-template-columns:1fr}
+  .detail-grid{grid-template-columns:1fr 1fr}
+  .nav button{padding:8px 10px;font-size:11px}
+}
+</style>
 </head>
 <body>
 
-  <div class="container">
-    <header>
-      <img src="icon-512.png" alt="Filteradium" style="width:120px;margin:20px auto;display:block;border-radius:16px;">
-      <h1>فیلترادیوم</h1>
-      <p class="subtitle">پلتفرم فیلترنویسی هوشمند بورس ایران</p>
-    </header>
-
-    <section class="download-section">
-      <h2>📥 دانلود برای تمام پلتفرم‌ها</h2>
-      <table class="download-table">
-        <thead>
-          <tr>
-            <th>پلتفرم</th>
-            <th>فایل</th>
-            <th>حجم</th>
-            <th>دانلود</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>🪟 ویندوز</td>
-            <td>Filteradium-1.0.0-Windows.exe</td>
-            <td>66.4 MB</td>
-            <td><a href="https://github.com/johncrazoova/filteradium/releases/download/v1.0.0/Filteradium-1.0.0-Windows.exe" class="btn-download">دانلود</a></td>
-          </tr>
-          <tr>
-            <td>🍎 مک</td>
-            <td>به‌زودی</td>
-            <td>-</td>
-            <td><span class="btn-soon">به‌زودی</span></td>
-          </tr>
-          <tr>
-            <td>🐧 لینوکس</td>
-            <td>Filteradium-1.0.0-Linux.AppImage</td>
-            <td>99.5 MB</td>
-            <td><a href="https://github.com/johncrazoova/filteradium/releases/download/v1.0.0/Filteradium-1.0.0-Linux.AppImage" class="btn-download">دانلود</a></td>
-          </tr>
-          <tr>
-            <td>📱 اندروید</td>
-            <td>Filteradium-1.0.0-Android.apk</td>
-            <td>22 KB</td>
-            <td><a href="https://github.com/johncrazoova/filteradium/releases/download/v1.0.0/Filteradium-1.0.0-Android.apk" class="btn-download">دانلود</a></td>
-          </tr>
-          <tr>
-            <td>🌐 وب</td>
-            <td>اپلیکیشن وب</td>
-            <td>-</td>
-            <td><a href="#app" class="btn-download">ورود</a></td>
-          </tr>
-        </tbody>
-      </table>
-      <p class="download-note">
-        🔗 <a href="https://github.com/johncrazoova/filteradium/releases/tag/v1.0.0" target="_blank">مشاهده در گیت‌هاب</a> |
-        🔗 <a href="https://github.com/johncrazoova/filteradium" target="_blank">سورس کد</a>
-      </p>
-    </section>
-
-    <section id="app" class="filter-section">
-      <h2>🔍 فیلترنویسی هوشمند</h2>
-      <div class="filters-grid">
-        <div class="filter-card" onclick="applyFilter('momentum')">
-          <div class="filter-icon">🚀</div>
-          <h3>مومنتوم قوی</h3>
-          <p>سهام با رشد قیمت بالای ۲٪ در روز</p>
-        </div>
-        <div class="filter-card" onclick="applyFilter('volume')">
-          <div class="filter-icon">📊</div>
-          <h3>حجم مشکوک</h3>
-          <p>سهام با حجم معاملات بالای ۳ برابر میانگین</p>
-        </div>
-        <div class="filter-card" onclick="applyFilter('oversold')">
-          <div class="filter-icon">📉</div>
-          <h3>کف‌فروش</h3>
-          <p>سهام با RSI زیر ۳۰</p>
-        </div>
-        <div class="filter-card" onclick="applyFilter('breakout')">
-          <div class="filter-icon">💥</div>
-          <h3>شکست مقاومت</h3>
-          <p>سهام بالای مقاومت اصلی</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="result-section" id="results" style="display:none">
-      <h2>📋 نتایج فیلتر</h2>
-      <div id="filter-results"></div>
-    </section>
-
-    <footer>
-      <p>فیلترادیوم © ۱۴۰۳ | پلتفرم فیلترنویسی هوشمند بورس ایران</p>
-    </footer>
+<div class="header">
+  <div class="logo">FILTERADIUM <span>STOCKS</span></div>
+  <div class="nav">
+    <button class="active" onclick="showTab('market')">بازار</button>
+    <button onclick="showTab('screener')">فیلتر</button>
+    <button onclick="showTab('results')">نتایج</button>
+    <button onclick="showTab('settings')">تنظیمات</button>
   </div>
+</div>
 
-  <script src="lib/filters.js"></script>
-  <script src="lib/app.js"></script>
+<div id="tab-market" class="tab active">
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <div class="search" style="flex:1;min-width:200px">
+      <input id="searchInput" placeholder="جستجوی سهم..." oninput="renderMarket()">
+    </div>
+    <select id="sortSelect" onchange="renderMarket()" style="width:auto;min-width:140px">
+      <option value="score-desc">امتیاز ↓</option>
+      <option value="score-asc">امتیاز ↑</option>
+      <option value="change-desc">تغییرات ↓</option>
+      <option value="change-asc">تغییرات ↑</option>
+      <option value="volume-desc">حجم ↓</option>
+      <option value="name-asc">نام الفبا</option>
+    </select>
+    <button class="btn btn-sm" onclick="recalcAll()">🔄 بروزرسانی</button>
+  </div>
+  <div id="marketList"></div>
+</div>
+
+<div id="tab-screener" class="tab">
+  <div class="card">
+    <h3 style="color:var(--gold);margin-bottom:12px">🔍 فیلتر سفارشی</h3>
+    <p style="color:var(--text2);font-size:13px;margin-bottom:16px">شرط‌های فیلتر رو اضافه کنید:</p>
+    <div id="filterChips" style="margin-bottom:16px"></div>
+    <div class="form-row-3">
+      <div>
+        <label>اندیکاتور</label>
+        <select id="fIndicator">
+          <option value="totalScore">امتیاز کل</option>
+          <option value="technicalScore">امتیاز تکنیکال</option>
+          <option value="momentumScore">امتیاز مومنتوم</option>
+          <option value="volatilityScore">امتیاز نوسان</option>
+          <option value="volumeScore">امتیاز حجم</option>
+          <option value="rsi">RSI</option>
+          <option value="macdHist">MACD هیستوگرام</option>
+          <option value="adx">ADX</option>
+          <option value="cci">CCI</option>
+          <option value="mfi">MFI</option>
+          <option value="stochK">استوکاستیک K</option>
+          <option value="williamsR">Williams %R</option>
+          <option value="bbPosition">موقعیت بولینگر</option>
+          <option value="priceVsSMA20">قیمت vs SMA20</option>
+        </select>
+      </div>
+      <div>
+        <label>شرط</label>
+        <select id="fOperator">
+          <option value="gt">بزرگتر از</option>
+          <option value="lt">کوچکتر از</option>
+          <option value="gte">بزرگتر مساوی</option>
+          <option value="lte">کوچکتر مساوی</option>
+          <option value="eq">مساوی</option>
+        </select>
+      </div>
+      <div>
+        <label>مقدار</label>
+        <input id="fValue" type="number" placeholder="مثلاً 30">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" onclick="addFilter()">+ اضافه شرط</button>
+      <button class="btn btn-outline" onclick="clearFilters()">پاک کردن همه</button>
+      <button class="btn btn-danger btn-sm" onclick="runFilters()" style="margin-right:auto">🔍 اجرای فیلتر</button>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3 style="color:var(--gold);margin-bottom:12px">⚡ فیلترهای آماده</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="presetOversold()">RSI اشباع فروش</button>
+      <button class="btn btn-outline btn-sm" onclick="presetOverbought()">RSI اشباع خرید</button>
+      <button class="btn btn-outline btn-sm" onclick="presetStrongTrend()">روند قوی</button>
+      <button class="btn btn-outline btn-sm" onclick="presetBullish()">سیگنال خرید قوی</button>
+      <button class="btn btn-outline btn-sm" onclick="presetVolumeSurge()">حجم غیرعادی</button>
+      <button class="btn btn-outline btn-sm" onclick="presetGoodScore()">امتیاز بالای 70</button>
+    </div>
+  </div>
+</div>
+
+<div id="tab-results" class="tab">
+  <div id="resultsContent"></div>
+</div>
+
+<div id="tab-settings" class="tab">
+  <div class="card">
+    <h3 style="color:var(--gold);margin-bottom:12px">⚙️ تنظیمات اندیکاتورها</h3>
+    <div class="form-row">
+      <div><label>دوره SMA</label><input id="setSMA" type="number" value="20"></div>
+      <div><label>دوره EMA</label><input id="setEMA" type="number" value="12"></div>
+      <div><label>دوره RSI</label><input id="setRSI" type="number" value="14"></div>
+      <div><label>دوره MACD</label><input id="setMACD" type="number" value="26"></div>
+      <div><label>دوره ATR</label><input id="setATR" type="number" value="14"></div>
+      <div><label>دوره ADX</label><input id="setADX" type="number" value="14"></div>
+    </div>
+    <button class="btn" onclick="saveSettings()">ذخیره و بروزرسانی</button>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <h3 style="color:var(--gold);margin-bottom:12px">📦 مدیریت داده</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">خروجی CSV</button>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile').click()">ورودی CSV</button>
+      <input type="file" id="importFile" accept=".csv" style="display:none" onchange="importCSV(event)">
+      <button class="btn btn-danger btn-sm" onclick="if(confirm('پاک شود؟')){localStorage.clear();location.reload()}">پاک کردن همه</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<div id="modal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+// ========== INDICATORS ==========
+function sma(data, period) {
+  const r = [];
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) { r.push(null); continue; }
+    let s = 0;
+    for (let j = i - period + 1; j <= i; j++) s += data[j];
+    r.push(s / period);
+  }
+  return r;
+}
+
+function ema(data, period) {
+  const r = [data[0]];
+  const k = 2 / (period + 1);
+  for (let i = 1; i < data.length; i++) {
+    r.push(data[i] * k + r[i - 1] * (1 - k));
+  }
+  return r;
+}
+
+function rsi(closes, period) {
+  const r = [];
+  let gains = 0, losses = 0;
+  for (let i = 0; i < closes.length; i++) {
+    if (i === 0) { r.push(null); continue; }
+    const diff = closes[i] - closes[i - 1];
+    if (i <= period) {
+      if (diff > 0) gains += diff; else losses -= diff;
+      if (i < period) { r.push(null); continue; }
+      const avgG = gains / period;
+      const avgL = losses / period;
+      r.push(avgL === 0 ? 100 : 100 - 100 / (1 + avgG / avgL));
+      gains = avgG; losses = avgL;
+    } else {
+      const g = diff > 0 ? diff : 0;
+      const l = diff < 0 ? -diff : 0;
+      gains = (gains * (period - 1) + g) / period;
+      losses = (losses * (period - 1) + l) / period;
+      r.push(losses === 0 ? 100 : 100 - 100 / (1 + gains / losses));
+    }
+  }
+  return r;
+}
+
+function macd(closes, fast, slow, sig) {
+  const emaF = ema(closes, fast);
+  const emaS = ema(closes, slow);
+  const line = emaF.map((v, i) => v - emaS[i]);
+  const signal = ema(line, sig);
+  const hist = line.map((v, i) => v - signal[i]);
+  return { line, signal, hist };
+}
+
+function bollinger(closes, period, mult) {
+  const mid = sma(closes, period);
+  const upper = [], lower = [];
+  for (let i = 0; i < closes.length; i++) {
+    if (mid[i] === null) { upper.push(null); lower.push(null); continue; }
+    let ss = 0;
+    for (let j = i - period + 1; j <= i; j++) ss += (closes[j] - mid[i]) ** 2;
+    const std = Math.sqrt(ss / period);
+    upper.push(mid[i] + mult * std);
+    lower.push(mid[i] - mult * std);
+  }
+  return { upper, mid, lower };
+}
+
+function stochastic(highs, lows, closes, kPeriod, dPeriod) {
+  const k = [];
+  for (let i = 0; i < closes.length; i++) {
+    if (i < kPeriod - 1) { k.push(null); continue; }
+    let hh = -Infinity, ll = Infinity;
+    for (let j = i - kPeriod + 1; j <= i; j++) { hh = Math.max(hh, highs[j]); ll = Math.min(ll, lows[j]); }
+    k.push(hh === ll ? 50 : ((closes[i] - ll) / (hh - ll)) * 100);
+  }
+  const kClean = k.map(v => v === null ? 0 : v);
+  const d = sma(kClean, dPeriod);
+  return { k, d };
+}
+
+function atr(highs, lows, closes, period) {
+  const tr = [highs[0] - lows[0]];
+  for (let i = 1; i < closes.length; i++) {
+    tr.push(Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i - 1]), Math.abs(lows[i] - closes[i - 1])));
+  }
+  return sma(tr, period);
+}
+
+function adx(highs, lows, closes, period) {
+  const pDM = [], nDM = [], tr = [highs[0] - lows[0]];
+  pDM.push(0); nDM.push(0);
+  for (let i = 1; i < closes.length; i++) {
+    const up = highs[i] - highs[i - 1];
+    const dn = lows[i - 1] - lows[i];
+    pDM.push(up > dn && up > 0 ? up : 0);
+    nDM.push(dn > up && dn > 0 ? dn : 0);
+    tr.push(Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i - 1]), Math.abs(lows[i] - closes[i - 1])));
+  }
+  const atr14 = sma(tr, period);
+  const smoothedPDM = ema(pDM, period);
+  const smoothedNDM = ema(nDM, period);
+  const dx = smoothedPDM.map((v, i) => {
+    const pdi = atr14[i] ? (v / atr14[i]) * 100 : 0;
+    const ndi = atr14[i] ? (smoothedNDM[i] / atr14[i]) * 100 : 0;
+    return pdi + ndi === 0 ? 0 : Math.abs(pdi - ndi) / (pdi + ndi) * 100;
+  });
+  return sma(dx, period);
+}
+
+function cci(highs, lows, closes, period) {
+  const tp = closes.map((c, i) => (highs[i] + lows[i] + c) / 3);
+  const tpSma = sma(tp, period);
+  return tp.map((v, i) => {
+    if (tpSma[i] === null) return null;
+    let md = 0;
+    for (let j = i - period + 1; j <= i; j++) md += Math.abs(tp[j] - tpSma[i]);
+    md /= period;
+    return md === 0 ? 0 : (v - tpSma[i]) / (0.015 * md);
+  });
+}
+
+function williamsR(highs, lows, closes, period) {
+  const r = [];
+  for (let i = 0; i < closes.length; i++) {
+    if (i < period - 1) { r.push(null); continue; }
+    let hh = -Infinity, ll = Infinity;
+    for (let j = i - period + 1; j <= i; j++) { hh = Math.max(hh, highs[j]); ll = Math.min(ll, lows[j]); }
+    r.push(hh === ll ? -50 : ((hh - closes[i]) / (hh - ll)) * -100);
+  }
+  return r;
+}
+
+function mfi(highs, lows, closes, volumes, period) {
+  const tp = closes.map((c, i) => (highs[i] + lows[i] + c) / 3);
+  const mf = tp.map((v, i) => v * volumes[i]);
+  const r = [];
+  for (let i = 0; i < closes.length; i++) {
+    if (i < period) { r.push(null); continue; }
+    let pmf = 0, nmf = 0;
+    for (let j = i - period + 1; j <= i; j++) {
+      if (tp[j] > tp[j - 1]) pmf += mf[j]; else nmf += mf[j];
+    }
+    r.push(nmf === 0 ? 100 : 100 - 100 / (1 + pmf / nmf));
+  }
+  return r;
+}
+
+function obv(closes, volumes) {
+  const r = [0];
+  for (let i = 1; i < closes.length; i++) {
+    r.push(closes[i] > closes[i - 1] ? r[i - 1] + volumes[i] : closes[i] < closes[i - 1] ? r[i - 1] - volumes[i] : r[i - 1]);
+  }
+  return r;
+}
+
+function vwap(highs, lows, closes, volumes) {
+  const r = [];
+  let cumTP = 0, cumV = 0;
+  for (let i = 0; i < closes.length; i++) {
+    const tp = (highs[i] + lows[i] + closes[i]) / 3;
+    cumTP += tp * volumes[i];
+    cumV += volumes[i];
+    r.push(cumV === 0 ? closes[i] : cumTP / cumV);
+  }
+  return r;
+}
+
+// ========== SCORING ==========
+function calcScores(stock) {
+  const { highs, lows, closes, volumes } = stock;
+  const n = closes.length - 1;
+  const s20 = sma(closes, 20);
+  const s50 = sma(closes, 50);
+  const s12 = ema(closes, 12);
+  const s26 = ema(closes, 26);
+  const r = rsi(closes, 14);
+  const m = macd(closes, 12, 26, 9);
+  const bb = bollinger(closes, 20, 2);
+  const st = stochastic(highs, lows, closes, 14, 3);
+  const ad = adx(highs, lows, closes, 14);
+  const cc = cci(highs, lows, closes, 20);
+  const wr = williamsR(highs, lows, closes, 14);
+  const mf = mfi(highs, lows, closes, volumes, 14);
+  const ob = obv(closes, volumes);
+  const vw = vwap(highs, lows, closes, volumes);
+
+  // Technical Score (trend)
+  let tech = 50;
+  if (s20[n] && s50[n]) {
+    if (closes[n] > s20[n]) tech += 10; else tech -= 10;
+    if (s20[n] > s50[n]) tech += 10; else tech -= 10;
+    if (closes[n] > s50[n]) tech += 5; else tech -= 5;
+  }
+  if (s12[n] > s26[n]) tech += 10; else tech -= 10;
+  if (m.hist[n] > 0) tech += 8; else tech -= 8;
+  if (m.hist[n] > m.hist[n - 1]) tech += 5; else tech -= 5;
+  if (ad[n] > 25) tech += 7; else tech -= 3;
+  tech = Math.max(0, Math.min(100, tech));
+
+  // Momentum Score
+  let mom = 50;
+  const rsiVal = r[n] || 50;
+  mom += (rsiVal - 50) * 0.4;
+  if (st.k[n] > st.d[n]) mom += 8; else mom -= 8;
+  if (st.k[n] > 80) mom -= 5; else if (st.k[n] < 20) mom += 5;
+  if (cc[n] > 100) mom += 5; else if (cc[n] < -100) mom -= 5;
+  if (wr[n] > -20) mom -= 3; else if (wr[n] < -80) mom += 3;
+  mom = Math.max(0, Math.min(100, mom));
+
+  // Volatility Score
+  let vol = 50;
+  if (bb.upper[n] && bb.lower[n]) {
+    const bw = (bb.upper[n] - bb.lower[n]) / bb.mid[n];
+    if (bw < 0.05) vol += 10; else if (bw > 0.15) vol -= 10;
+    const bp = (closes[n] - bb.lower[n]) / (bb.upper[n] - bb.lower[n]);
+    if (bp < 0.2) vol += 5; else if (bp > 0.8) vol -= 5;
+  }
+  vol = Math.max(0, Math.min(100, vol));
+
+  // Volume Score
+  let vsc = 50;
+  const mfiVal = mf[n] || 50;
+  vsc += (mfiVal - 50) * 0.3;
+  if (ob[n] > ob[n - 1]) vsc += 10; else vsc -= 10;
+  if (closes[n] > vw[n]) vsc += 8; else vsc -= 8;
+  const avgVol = volumes.slice(-20).reduce((a, b) => a + b, 0) / 20;
+  if (volumes[n] > avgVol * 1.5) vsc += 7;
+  vsc = Math.max(0, Math.min(100, vsc));
+
+  const total = Math.round(tech * 0.35 + mom * 0.30 + vol * 0.15 + vsc * 0.20);
+
+  let signal;
+  if (total > 80) signal = 'خرید قوی';
+  else if (total > 60) signal = 'خرید';
+  else if (total > 40) signal = 'خنثی';
+  else if (total > 20) signal = 'فروش';
+  else signal = 'فروش قوی';
+
+  return {
+    totalScore: total, technicalScore: Math.round(tech), momentumScore: Math.round(mom),
+    volatilityScore: Math.round(vol), volumeScore: Math.round(vsc), signal,
+    indicators: { rsi: r[n], macdHist: m.hist[n], adx: ad[n], cci: cc[n], mfi: mfiVal, stochK: st.k[n], williamsR: wr[n], bbPosition: bb.upper[n] ? (closes[n] - bb.lower[n]) / (bb.upper[n] - bb.lower[n]) : 0.5, priceVsSMA20: s20[n] ? closes[n] - s20[n] : 0 }
+  };
+}
+
+// ========== DEMO DATA ==========
+function genStockData(name, code, basePrice, trend) {
+  const highs = [], lows = [], closes = [], volumes = [];
+  let price = basePrice;
+  for (let i = 0; i < 120; i++) {
+    const t = trend + (Math.random() - 0.48) * 3;
+    const change = t + (Math.random() - 0.5) * 4;
+    const open = price;
+    price = Math.max(price * 0.7, price + change);
+    const high = Math.max(open, price) * (1 + Math.random() * 0.02);
+    const low = Math.min(open, price) * (1 - Math.random() * 0.02);
+    highs.push(high); lows.push(low); closes.push(price);
+    volumes.push(Math.round((500000 + Math.random() * 3000000) * (1 + Math.abs(change) * 0.1)));
+  }
+  return { name, code, highs, lows, closes, volumes,
+    price: closes[closes.length - 1],
+    prevPrice: closes[closes.length - 2],
+    volume: volumes[volumes.length - 1] };
+}
+
+const DEMO_STOCKS = [
+  genStockData('خودرو', '0001', 3200, 5),
+  genStockData('شپنا', '0002', 28000, 3),
+  genStockData('فولاد', '0003', 15500, 4),
+  genStockData('فملی', '0004', 8900, -2),
+  genStockData('شبندر', '0005', 4500, 2),
+  genStockData('خساپا', '0006', 1800, -3),
+  genStockData('وبملت', '0007', 2500, 1),
+  genStockData('شتران', '0008', 32000, -1),
+  genStockData('کگل', '0009', 42000, 6),
+  genStockData('فخوز', '0010', 22000, 3),
+  genStockData('ذوب', '0011', 3500, -2),
+  genStockData('شپدیس', '0012', 68000, 2),
+  genStockData('پارسان', '0013', 3800, 4),
+  genStockData('خگستر', '0014', 1200, -1),
+  genStockData('غدیس', '0015', 5200, 1),
+  genStockData('میدکو', '0016', 14000, 5),
+  genStockData('آپادانا', '0017', 8500, -3),
+  genStockData('فغدیر', '0018', 6500, 2),
+  genStockData('سهران', '0019', 18000, 4),
+  genStockData('بپاس', '0020', 9200, -1),
+];
+
+function enumStockData(name, code, basePrice, trend) {
+  return genStockData(name, code, basePrice, trend);
+}
+
+// ========== STATE ==========
+let stocks = [];
+let filters = [];
+let results = [];
+
+function init() {
+  const saved = localStorage.getItem('f_stocks');
+  if (saved) {
+    try { stocks = JSON.parse(saved); } catch(e) { stocks = DEMO_STOCKS; }
+  } else {
+    stocks = DEMO_STOCKS;
+    localStorage.setItem('f_stocks', JSON.stringify(stocks));
+  }
+  recalcAll();
+}
+
+function recalcAll() {
+  stocks.forEach(s => {
+    const sc = calcScores(s);
+    Object.assign(s, sc);
+  });
+  stocks.sort((a, b) => b.totalScore - a.totalScore);
+  localStorage.setItem('f_stocks', JSON.stringify(stocks));
+  renderMarket();
+  toast('بروزرسانی شد ✓');
+}
+
+function renderMarket() {
+  const q = document.getElementById('searchInput').value;
+  const sort = document.getElementById('sortSelect').value;
+  let list = [...stocks];
+  if (q) list = list.filter(s => s.name.includes(q) || s.code.includes(q));
+
+  if (sort === 'score-desc') list.sort((a, b) => b.totalScore - a.totalScore);
+  else if (sort === 'score-asc') list.sort((a, b) => a.totalScore - b.totalScore);
+  else if (sort === 'change-desc') list.sort((a, b) => (b.price - b.prevPrice) / b.prevPrice - (a.price - a.prevPrice) / a.prevPrice);
+  else if (sort === 'change-asc') list.sort((a, b) => (a.price - a.prevPrice) / a.prevPrice - (b.price - b.prevPrice) / b.prevPrice);
+  else if (sort === 'volume-desc') list.sort((a, b) => b.volume - a.volume);
+  else if (sort === 'name-asc') list.sort((a, b) => a.name.localeCompare(b.name, 'fa'));
+
+  const el = document.getElementById('marketList');
+  if (!list.length) { el.innerHTML = '<div class="empty"><div class="icon">📊</div>سهمی یافت نشد</div>'; return; }
+
+  el.innerHTML = list.map(s => {
+    const chg = ((s.price - s.prevPrice) / s.prevPrice * 100).toFixed(1);
+    const cls = chg >= 0 ? 'up' : 'down';
+    const sCls = s.totalScore > 80 ? 'score-sb' : s.totalScore > 60 ? 'score-b' : s.totalScore > 40 ? 'score-n' : s.totalScore > 20 ? 'score-s' : 'score-ss';
+    return `<div class="card" onclick="showDetail('${s.code}')" style="cursor:pointer">
+      <div class="stock-row">
+        <div><div class="stock-name">${s.name}</div><div style="font-size:11px;color:var(--text2)">${s.code}</div></div>
+        <div class="stock-price">${fmt(s.price)}</div>
+        <div class="stock-change ${cls}">${chg > 0 ? '+' : ''}${chg}%</div>
+        <div style="text-align:center"><div class="score-badge ${sCls}">${s.totalScore}</div><div class="signal ${cls}">${s.signal}</div></div>
+        <div class="stock-price" style="font-size:11px;color:var(--text2)">${fmtVol(s.volume)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showDetail(code) {
+  const s = stocks.find(x => x.code === code);
+  if (!s) return;
+  const chg = ((s.price - s.prevPrice) / s.prevPrice * 100).toFixed(1);
+  const cls = chg >= 0 ? 'up' : 'down';
+  const ind = s.indicators || {};
+  document.getElementById('modalContent').innerHTML = `
+    <h3>${s.name} (${s.code})</h3>
+    <div style="text-align:center;margin:12px 0">
+      <div style="font-size:28px;font-weight:900">${fmt(s.price)}</div>
+      <div class="${cls}" style="font-size:16px;font-weight:700">${chg > 0 ? '+' : ''}${chg}%</div>
+      <div style="margin-top:8px"><span class="score-badge ${s.totalScore > 80 ? 'score-sb' : s.totalScore > 60 ? 'score-b' : s.totalScore > 40 ? 'score-n' : 'score-s'}" style="width:56px;height:56px;font-size:18px">${s.totalScore}</span></div>
+      <div style="margin-top:4px;font-weight:700;color:var(--gold)">${s.signal}</div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="lbl">تکنیکال</div><div class="val">${s.technicalScore}</div><div class="bar"><div class="bar-fill" style="width:${s.technicalScore}%;background:var(--gold)"></div></div></div>
+      <div class="detail-item"><div class="lbl">مومنتوم</div><div class="val">${s.momentumScore}</div><div class="bar"><div class="bar-fill" style="width:${s.momentumScore}%;background:var(--blue)"></div></div></div>
+      <div class="detail-item"><div class="lbl">نوسان</div><div class="val">${s.volatilityScore}</div><div class="bar"><div class="bar-fill" style="width:${s.volatilityScore}%;background:var(--green)"></div></div></div>
+      <div class="detail-item"><div class="lbl">حجم</div><div class="val">${s.volumeScore}</div><div class="bar"><div class="bar-fill" style="width:${s.volumeScore}%;background:var(--red)"></div></div></div>
+    </div>
+    <h3 style="color:var(--gold);margin:16px 0 8px">اندیکاتورها</h3>
+    <div class="stat-row"><span class="stat-label">RSI</span><span class="stat-val">${num(ind.rsi)}</span></div>
+    <div class="stat-row"><span class="stat-label">MACD هیستوگرام</span><span class="stat-val">${num(ind.macdHist)}</span></div>
+    <div class="stat-row"><span class="stat-label">ADX</span><span class="stat-val">${num(ind.adx)}</span></div>
+    <div class="stat-row"><span class="stat-label">CCI</span><span class="stat-val">${num(ind.cci)}</span></div>
+    <div class="stat-row"><span class="stat-label">MFI</span><span class="stat-val">${num(ind.mfi)}</span></div>
+    <div class="stat-row"><span class="stat-label">استوکاستیک K</span><span class="stat-val">${num(ind.stochK)}</span></div>
+    <div class="stat-row"><span class="stat-label">Williams %R</span><span class="stat-val">${num(ind.williamsR)}</span></div>
+    <div class="stat-row"><span class="stat-label">موقعیت بولینگر</span><span class="stat-val">${num(ind.bbPosition, 2)}</span></div>
+    <div class="stat-row"><span class="stat-label">حجم</span><span class="stat-val">${fmtVol(s.volume)}</span></div>
+    <button class="btn" onclick="closeModal()" style="width:100%;margin-top:16px">بستن</button>`;
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+// ========== FILTERS ==========
+function addFilter() {
+  const ind = document.getElementById('fIndicator').value;
+  const op = document.getElementById('fOperator').value;
+  const val = parseFloat(document.getElementById('fValue').value);
+  if (isNaN(val)) { toast('مقدار را وارد کنید'); return; }
+  filters.push({ indicator: ind, operator: op, value: val });
+  renderFilterChips();
+}
+
+function removeFilter(i) { filters.splice(i, 1); renderFilterChips(); }
+function clearFilters() { filters = []; renderFilterChips(); }
+
+function renderFilterChips() {
+  const names = { totalScore:'امتیاز کل', technicalScore:'تکنیکال', momentumScore:'مومنتوم', volatilityScore:'نوسان', volumeScore:'حجم', rsi:'RSI', macdHist:'MACD', adx:'ADX', cci:'CCI', mfi:'MFI', stochK:'استوکاستیک', williamsR:'Williams %R', bbPosition:'بولینگر', priceVsSMA20:'قیمت vs SMA20' };
+  const ops = { gt:'>', lt:'<', gte:'≥', lte:'≤', eq:'=' };
+  document.getElementById('filterChips').innerHTML = filters.length ? filters.map((f, i) =>
+    `<div class="filter-chip active">${names[f.indicator] || f.indicator} ${ops[f.operator]} ${f.value} <span class="x" onclick="removeFilter(${i})">✕</span></div>`
+  ).join('') : '<span style="color:var(--text2);font-size:13px">شرطی اضافه نشده</span>';
+}
+
+function runFilters() {
+  if (!filters.length) { toast('اول شرط اضافه کنید'); return; }
+  results = stocks.filter(s => {
+    return filters.every(f => {
+      let val;
+      if (['rsi','macdHist','adx','cci','mfi','stochK','williamsR','bbPosition','priceVsSMA20'].includes(f.indicator)) {
+        val = (s.indicators || {})[f.indicator] || 0;
+      } else { val = s[f.indicator] || 0; }
+      switch (f.operator) {
+        case 'gt': return val > f.value;
+        case 'lt': return val < f.value;
+        case 'gte': return val >= f.value;
+        case 'lte': return val <= f.value;
+        case 'eq': return val === f.value;
+      }
+    });
+  });
+  renderResults();
+  showTab('results');
+  toast(`${results.length} سهم یافت شد ✓`);
+}
+
+function renderResults() {
+  const el = document.getElementById('resultsContent');
+  if (!results.length) { el.innerHTML = '<div class="empty"><div class="icon">🔍</div>نتیجه‌ای نیست. فیلتر اجرا کنید.</div>'; return; }
+  el.innerHTML = `<div class="card"><h3 style="color:var(--gold);margin-bottom:8px">📊 نتایج فیلتر (${results.length} سهم)</h3></div>` +
+    results.map(s => {
+      const chg = ((s.price - s.prevPrice) / s.prevPrice * 100).toFixed(1);
+      const cls = chg >= 0 ? 'up' : 'down';
+      const sCls = s.totalScore > 80 ? 'score-sb' : s.totalScore > 60 ? 'score-b' : s.totalScore > 40 ? 'score-n' : 'score-s' : 'score-ss';
+      return `<div class="card" onclick="showDetail('${s.code}')" style="cursor:pointer">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div><div class="stock-name">${s.name}</div><div class="${cls}" style="font-size:13px">${fmt(s.price)} (${chg > 0 ? '+' : ''}${chg}%)</div></div>
+          <div style="text-align:center"><div class="score-badge ${sCls}">${s.totalScore}</div><div class="signal">${s.signal}</div></div>
+        </div></div>`;
+    }).join('');
+}
+
+// ========== PRESETS ==========
+function presetOversold() { clearFilters(); filters.push({ indicator:'rsi', operator:'lt', value:30 }); renderFilterChips(); runFilters(); }
+function presetOverbought() { clearFilters(); filters.push({ indicator:'rsi', operator:'gt', value:70 }); renderFilterChips(); runFilters(); }
+function presetStrongTrend() { clearFilters(); filters.push({ indicator:'adx', operator:'gt', value:25 }, { indicator:'technicalScore', operator:'gt', value:60 }); renderFilterChips(); runFilters(); }
+function presetBullish() { clearFilters(); filters.push({ indicator:'totalScore', operator:'gt', value:60 }, { indicator:'rsi', operator:'gt', value:50 }); renderFilterChips(); runFilters(); }
+function presetVolumeSurge() { clearFilters(); filters.push({ indicator:'volumeScore', operator:'gt', value:60 }); renderFilterChips(); runFilters(); }
+function presetGoodScore() { clearFilters(); filters.push({ indicator:'totalScore', operator:'gt', value:70 }); renderFilterChips(); runFilters(); }
+
+// ========== TABS ==========
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b => { if (b.textContent.includes({market:'بازار',screener:'فیلتر',results:'نتایج',settings:'تنظیمات'}[name])) b.classList.add('active'); });
+}
+
+// ========== SETTINGS ==========
+function saveSettings() {
+  toast('تنظیمات ذخیره شد ✓');
+  recalcAll();
+}
+
+// ========== IO ==========
+function exportCSV() {
+  let csv = 'Name,Code,Price,Change%,TotalScore,Technical,Momentum,Volatility,VolumeScore,Signal\n';
+  stocks.forEach(s => {
+    const chg = ((s.price - s.prevPrice) / s.prevPrice * 100).toFixed(2);
+    csv += `${s.name},${s.code},${s.price.toFixed(0)},${chg},${s.totalScore},${s.technicalScore},${s.momentumScore},${s.volatilityScore},${s.volumeScore},${s.signal}\n`;
+  });
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'filteradium_export.csv';
+  a.click();
+  toast('خروجی CSV ✓');
+}
+
+function importCSV(e) {
+  toast('ورودی CSV پشتیبانی نمی‌شود (فقط خروجی)');
+}
+
+// ========== UTILS ==========
+function fmt(n) { return n ? n.toLocaleString('fa-IR') : '0'; }
+function fmtVol(n) { return n > 1e6 ? (n / 1e6).toFixed(1) + 'M' : n > 1e3 ? (n / 1e3).toFixed(0) + 'K' : n; }
+function num(v, d) { return v !== null && v !== undefined ? Number(v).toFixed(d || 1) : '-'; }
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+
+// Init
+init();
+</script>
 </body>
 </html>
