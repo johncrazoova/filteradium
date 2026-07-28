@@ -1,0 +1,40 @@
+name: Build Windows + Linux
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - working-directory: ./desktop
+        run: npm install
+      - working-directory: ./desktop
+        run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Filteradium-Windows
+          path: desktop/dist/*.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - working-directory: ./desktop
+        run: npm install
+      - working-directory: ./desktop
+        run: npx electron-builder --linux AppImage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Filteradium-Linux
+          path: desktop/dist/*.AppImage
