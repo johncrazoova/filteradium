@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>FilteradiumExClient</title>
+  <title>FilteradiumExClient v1.2.0</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -11,14 +11,13 @@
       <span class="logo">F</span>
       <h1>FILTERADIUM EX CLIENT</h1>
       <span class="subtitle">استخراج اطلاعات بورس ایران</span>
-      <span class="version">v1.1.2</span>
+      <span class="version">v1.2.0</span>
     </div>
-    <div class="creator">Created by S.Zare</div>
+    <div class="creator">Developed By: S.Zare</div>
   </header>
 
   <div class="main-container">
     <aside class="sidebar">
-      <!-- Stats -->
       <div class="panel stats-panel">
         <h3>📊 آمار دیتابیس</h3>
         <div class="stats-grid">
@@ -35,44 +34,25 @@
         </button>
       </div>
 
-      <!-- Data Types - Checkboxes -->
       <div class="panel">
         <h3>📊 نوع داده (چند انتخابی)</h3>
         <div class="check-group">
-          <label class="check-item">
-            <input type="checkbox" class="type-check" value="price" checked>
-            <span class="check-icon">📈</span>
-            <span>قیمت و حجم</span>
-          </label>
-          <label class="check-item">
-            <input type="checkbox" class="type-check" value="client">
-            <span class="check-icon">👥</span>
-            <span>حقیقی/حقوقی</span>
-          </label>
-          <label class="check-item">
-            <input type="checkbox" class="type-check" value="shareholder">
-            <span class="check-icon">🏢</span>
-            <span>سهام‌داران</span>
-          </label>
+          <label class="check-item"><input type="checkbox" class="type-check" value="price" checked><span class="check-icon">📈</span><span>قیمت و حجم</span></label>
+          <label class="check-item"><input type="checkbox" class="type-check" value="client"><span class="check-icon">👥</span><span>حقیقی/حقوقی</span></label>
+          <label class="check-item"><input type="checkbox" class="type-check" value="shareholder"><span class="check-icon">🏢</span><span>سهام‌داران</span></label>
         </div>
       </div>
 
-      <!-- Sector -->
       <div class="panel">
         <h3>🏭 صنعت</h3>
-        <select id="sectorFilter" class="select">
-          <option value="all">همه صنایع</option>
-        </select>
+        <select id="sectorFilter" class="select"><option value="all">همه صنایع</option></select>
       </div>
 
-      <!-- Date Range -->
       <div class="panel">
         <h3>📅 بازه زمانی</h3>
         <div class="date-range">
-          <label>از</label>
-          <input type="date" id="startDate" class="input">
-          <label>تا</label>
-          <input type="date" id="endDate" class="input">
+          <label>از</label><input type="date" id="startDate" class="input">
+          <label>تا</label><input type="date" id="endDate" class="input">
         </div>
         <div class="quick-dates">
           <button class="btn-sm" onclick="setQuickDate(7)">هفته</button>
@@ -83,7 +63,6 @@
         </div>
       </div>
 
-      <!-- Symbols -->
       <div class="panel">
         <h3>🔍 نماد</h3>
         <input type="text" id="symbolSearch" placeholder="جستجو..." class="input">
@@ -94,25 +73,16 @@
     <main class="content">
       <div class="toolbar">
         <div class="toolbar-right">
-          <button id="btnFetch" class="btn btn-primary" onclick="fetchData()">
-            🔄 دریافت و ذخیره داده
-          </button>
-          <button class="btn btn-info" onclick="displayData()">
-            📊 نمایش داده
-          </button>
+          <button id="btnFetch" class="btn btn-primary" onclick="fetchData()">🔄 دریافت و ذخیره داده</button>
+          <button class="btn btn-info" onclick="displayData()">📊 نمایش داده</button>
           <span id="recordCount" class="badge">0 رکورد</span>
         </div>
         <div class="toolbar-left">
-          <button class="btn btn-success" onclick="exportCSV()" id="btnCSV" disabled>
-            📄 CSV
-          </button>
-          <button class="btn btn-success" onclick="exportExcel()" id="btnExcel" disabled>
-            📊 Excel
-          </button>
+          <button class="btn btn-success" onclick="exportCSV()" id="btnCSV" disabled>📄 CSV</button>
+          <button class="btn btn-success" onclick="exportExcel()" id="btnExcel" disabled>📊 Excel</button>
         </div>
       </div>
 
-      <!-- Tabs -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="price" onclick="switchTab('price')" style="display:none">📈 قیمت</button>
         <button class="tab-btn" data-tab="client" onclick="switchTab('client')" style="display:none">👥 حقیقی/حقوقی</button>
@@ -120,10 +90,7 @@
       </div>
 
       <div class="table-container">
-        <table id="dataTable" class="data-table">
-          <thead id="tableHead"></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
+        <table id="dataTable" class="data-table"><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table>
         <div id="emptyState" class="empty-state">
           <span class="empty-icon">📊</span>
           <h3>داده‌ای نمایش داده نشده</h3>
