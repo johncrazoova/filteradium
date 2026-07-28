@@ -1,0 +1,40 @@
+{
+  "name": "filteradium-exporter",
+  "version": "1.0.0",
+  "description": "TSETMC Data Exporter for Filteradium",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.filteradium.exporter",
+    "productName": "Filteradium",
+    "win": {
+      "target": "portable",
+      "icon": "../icon-512.png"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "styles.css",
+      "renderer.js",
+      "../data/filteradium.db"
+    ],
+    "extraResources": [
+      {
+        "from": "../data/filteradium.db",
+        "to": "data/filteradium.db"
+      }
+    ]
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  }
+}

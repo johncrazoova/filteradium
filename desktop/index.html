@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>Filteradium Exporter</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-right">
+      <span class="logo">F</span>
+      <h1>FILTERADIUM</h1>
+      <span class="subtitle">صادرات داده بورس</span>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="main-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="panel">
+        <h3>📊 نوع داده</h3>
+        <div class="radio-group">
+          <label class="radio-item active" data-type="price">
+            <input type="radio" name="dataType" value="price" checked>
+            <span class="radio-icon">📈</span>
+            <span>قیمت و حجم</span>
+          </label>
+          <label class="radio-item" data-type="client">
+            <input type="radio" name="dataType" value="client">
+            <span class="radio-icon">👥</span>
+            <span>حقیقی/حقوقی</span>
+          </label>
+          <label class="radio-item" data-type="shareholder">
+            <input type="radio" name="dataType" value="shareholder">
+            <span class="radio-icon">🏢</span>
+            <span>سهام‌داران</span>
+          </label>
+          <label class="radio-item" data-type="orderbook">
+            <input type="radio" name="dataType" value="orderbook">
+            <span class="radio-icon">📋</span>
+            <span>تابلو سفارشات</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>🎯 بازار</h3>
+        <select id="marketType" class="select">
+          <option value="all">همه بازارها</option>
+          <option value="1">اصلی</option>
+          <option value="2">فرعی</option>
+          <option value="3">سوم</option>
+          <option value="4">اختیار</option>
+        </select>
+      </div>
+
+      <div class="panel">
+        <h3>🏭 صنعت</h3>
+        <select id="sectorFilter" class="select">
+          <option value="all">همه صنایع</option>
+        </select>
+      </div>
+
+      <div class="panel">
+        <h3>📅 بازه زمانی</h3>
+        <div class="date-range">
+          <label>از تاریخ</label>
+          <input type="date" id="startDate" class="input">
+          <label>تا تاریخ</label>
+          <input type="date" id="endDate" class="input">
+        </div>
+        <div class="quick-dates">
+          <button class="btn-sm" onclick="setQuickDate(7)">هفته</button>
+          <button class="btn-sm" onclick="setQuickDate(30)">ماه</button>
+          <button class="btn-sm" onclick="setQuickDate(90)">۳ ماه</button>
+          <button class="btn-sm" onclick="setQuickDate(180)">۶ ماه</button>
+          <button class="btn-sm" onclick="setQuickDate(365)">سال</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>🔍 نماد</h3>
+        <input type="text" id="symbolSearch" placeholder="جستجوی نماد..." class="input">
+        <div id="symbolList" class="symbol-list"></div>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-right">
+          <button id="btnFetch" class="btn btn-primary" onclick="fetchData()">
+            <span class="btn-icon">🔄</span> دریافت داده
+          </button>
+          <span id="recordCount" class="badge">0 رکورد</span>
+        </div>
+        <div class="toolbar-left">
+          <button id="btnCSV" class="btn btn-success" onclick="exportCSV()" disabled>
+            <span class="btn-icon">📄</span> CSV
+          </button>
+          <button id="btnExcel" class="btn btn-success" onclick="exportExcel()" disabled>
+            <span class="btn-icon">📊</span> Excel
+          </button>
+          <button id="btnExcelAll" class="btn btn-info" onclick="exportExcelAll()" disabled>
+            <span class="btn-icon">📑</span> Excel (همه)
+          </button>
+        </div>
+      </div>
+
+      <!-- Preview Table -->
+      <div class="table-container">
+        <table id="dataTable" class="data-table">
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div id="emptyState" class="empty-state">
+          <span class="empty-icon">📊</span>
+          <h3>داده‌ای نمایش داده نشده</h3>
+          <p>فیلترها رو تنظیم کنید و دکمه دریافت داده رو بزنید</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
