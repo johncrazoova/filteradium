@@ -1,101 +1,102 @@
 # فیلترادیوم | Filteradium
-## پلتفرم فیلترنویسی هوشمند بورس ایران
+## Smart Stock Filtering Platform for Tehran Stock Exchange
 
-### 🎯 هدف
-ساده‌سازی فیلترنویسی و تحلیل سهام بورس اوراق بهادار تهران برای معامله‌گران.
+### 🎯 Overview
 
-### 📊 امکانات
+Filteradium is a professional stock filtering and analysis platform for the Tehran Stock Exchange (TSETMC). It provides real-time market data, technical analysis indicators, and advanced filtering capabilities.
 
-**فرانت‌اند:**
-- رابط کاربری زیبا و ریسپانسیو
-- فیلترنویسی Drag & Drop
-- ۶ فیلتر آماده
-- نمایش لحظه‌ای قیمت
+### 📱 Available Platforms
 
-**بک‌اند (Python):**
-- API واقعی TSETMC
-- موتور تحلیل تکنیکال
-- سیستم امتیازدهی پیشرفته
-- تشخیص الگوها
-- تحلیل جریان پول
-- مدیریت ریسک
-- پایگاه داده SQLite
+| Platform | File | Size | Download |
+|----------|------|------|----------|
+| **Android** | `filteradium.apk` | ~22 KB | [Download](https://github.com/johncrazoova/filteradium/releases/download/v1.0-android/filteradium.apk) |
+| **Windows** | `Filteradium-Setup.exe` | Build needed | Build from source |
+| **macOS** | `Filteradium.dmg` | Build needed | Build from source |
+| **Linux** | `Filteradium.AppImage` | Build needed | Build from source |
+| **iOS** | Web App (PWA) | - | Use Safari |
 
-### 🛠️ نصب و اجرا
-
-```bash
-# 1. نصب dependency ها
-cd backend
-pip install -r requirements.txt
-
-# 2. اجرای سرور
-cd ..
-python run.py
-```
-
-**یا با Docker:**
-```bash
-docker-compose up
-```
-
-### 📡 API Endpoints
-
-| Endpoint | Method | توضیح |
-|----------|--------|-------|
-| `/api/market` | GET | دیتای بازار |
-| `/api/stock/{ins_code}/score` | GET | امتیاز سهم |
-| `/api/filter` | POST | اعمال فیلتر |
-| `/api/search` | GET | جستجوی سهم |
-| `/api/scores/batch` | GET | امتیاز چند سهم |
-| `/api/filters/presets` | GET | فیلترهای آماده |
-| `/docs` | GET | مستندات Swagger |
-
-### 📁 ساختار پروژه
+### 📦 Project Structure
 
 ```
 filteradium/
-├── backend/
-│   ├── api/
-│   │   └── tsetmc_client.py    # کلاینت TSETMC
-│   ├── core/
-│   │   └── scoring.py          # موتور تحلیل و امتیازدهی
-│   ├── models/
-│   │   └── database.py         # مدل‌های پایگاه داده
-│   ├── main.py                 # سرور FastAPI
-│   └── requirements.txt
-├── styles/
-│   └── main.css                # استایل‌های فرانت‌اند
-├── lib/
-│   ├── filters.js              # منطق فیلترنویسی
-│   └── app.js                  # منطق اپلیکیشن
-├── index.html                  # صفحه اصلی
-├── run.py                      # اسکریپت اجرا
-└── README.md
+├── backend/                    # Python FastAPI backend
+│   ├── api/                    # TSETMC API clients
+│   ├── core/                   # Indicators, scoring, backtest
+│   ├── models/                 # Database models
+│   ├── services/               # Market data services
+│   └── main.py                 # FastAPI server
+├── android/                    # Android app (WebView)
+├── desktop/                    # Electron app (Windows/Mac/Linux)
+├── styles/                     # CSS styles
+├── lib/                        # JavaScript filters
+├── index.html                  # Web interface
+└── run.py                      # Server launcher
 ```
 
-### 🔧 تکنولوژی‌ها
+### 🚀 Quick Start
 
-- **Backend:** Python, FastAPI, SQLAlchemy
-- **Frontend:** HTML, CSS, JavaScript
-- **Database:** SQLite
-- **API:** TSETMC CDN
+#### 1. Backend Server
 
-### 📋 نقشه راه
+```bash
+# Install dependencies
+pip install -r backend/requirements.txt
 
-- [x] MVP فرانت‌اند
-- [x] بک‌اند Python
-- [x] موتور تحلیل تکنیکال
-- [x] سیستم امتیازدهی
-- [ ] اتصال به API واقعی
-- [ ] سیستم ورود/ثبت‌نام
-- [ ] هشدار تلگرام
-- [ ] درگاه پرداخت
-- [ ] اپلیکیشن موبایل
+# Run server
+python run.py
+```
 
-### 👤 تیم
+#### 2. Web Interface
 
-- توسعه‌دهنده: Saeid
-- AI Assistant: Hermes
+Open `index.html` in your browser or access via server.
 
-### ⚠️ هشدار
-بورس دارای ریسک است. قبل از سرمایه‌گذاری تحقیق کنید.
+#### 3. Android App
+
+Download APK from [Releases](https://github.com/johncrazoova/filteradium/releases) and install on your device.
+
+#### 4. Desktop App (Windows/Mac/Linux)
+
+```bash
+cd desktop
+npm install
+npm start
+```
+
+To build for your platform:
+```bash
+npm run build:win    # Windows
+npm run build:mac    # macOS
+npm run build:linux  # Linux
+```
+
+### 📊 Features
+
+- **Real-time Market Data**: Live prices and market watch
+- **Technical Indicators**: 30+ indicators (RSI, MACD, Bollinger, etc.)
+- **Smart Scoring**: Multi-factor scoring engine
+- **Backtesting**: Test strategies on historical data
+- **Custom Filters**: Create and save your own filters
+- **User Profiles**: Personalized dashboard
+- **Cross-platform**: Works on all devices
+
+### 🔧 Technical Stack
+
+| Component | Technology |
+|-----------|------------|
+| Backend | Python FastAPI |
+| Database | SQLAlchemy + SQLite |
+| Frontend | HTML/CSS/JavaScript |
+| Android | WebView |
+| Desktop | Electron |
+| Indicators | NumPy/Pandas |
+
+### 📝 License
+
+MIT License
+
+### 🤝 Contributing
+
+Contributions welcome! Please open an issue or submit a pull request.
+
+### 📧 Contact
+
+- GitHub: [@johncrazoova](https://github.com/johncrazoova)

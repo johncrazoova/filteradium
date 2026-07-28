@@ -1,0 +1,56 @@
+appId: com.filteradium.app
+productName: Filteradium
+copyright: Copyright © 2024 Filteradium Team
+
+directories:
+  output: dist
+
+files:
+  - main.js
+  - preload.js
+  - assets/**/*
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  icon: assets/icon.png
+  artifactName: Filteradium-${version}-win.${ext}
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  icon: assets/icon.png
+  category: public.app-category.finance
+  artifactName: Filteradium-${version}-mac.${ext}
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+    - target: rpm
+      arch:
+        - x64
+  icon: assets/icon.png
+  category: Finance
+  artifactName: Filteradium-${version}-linux.${ext}
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Filteradium
+  installerIcon: assets/icon.png
+  uninstallerIcon: assets/icon.png
