@@ -1,0 +1,6 @@
+httpx>=0.25.0
+sqlalchemy>=2.0.0
+apscheduler>=3.10.0
+loguru>=0.7.0
+python-dotenv>=1.0.0
+aiofiles>=23.0.0
