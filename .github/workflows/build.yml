@@ -1,0 +1,80 @@
+name: Build & Release Desktop Apps
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install and Build Windows
+        working-directory: ./desktop
+        run: |
+          npm ci
+          npx electron-builder --win portable
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Filteradium-Windows
+          path: desktop/dist/*.exe
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install and Build macOS
+        working-directory: ./desktop
+        run: |
+          npm ci
+          npx electron-builder --mac dir
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Filteradium-macOS
+          path: desktop/dist/mac*/
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install and Build Linux
+        working-directory: ./desktop
+        run: |
+          npm ci
+          npx electron-builder --linux AppImage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Filteradium-Linux
+          path: desktop/dist/*.AppImage
+
+  release:
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./artifacts/Filteradium-Windows/*
+            ./artifacts/Filteradium-macOS/*
+            ./artifacts/Filteradium-Linux/*
+          draft: false
+          prerelease: false
