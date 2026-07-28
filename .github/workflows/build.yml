@@ -17,7 +17,7 @@ jobs:
       - name: Install and Build Windows
         working-directory: ./desktop
         run: |
-          npm ci
+          npm install
           npx electron-builder --win portable
       - uses: actions/upload-artifact@v4
         with:
@@ -34,7 +34,7 @@ jobs:
       - name: Install and Build macOS
         working-directory: ./desktop
         run: |
-          npm ci
+          npm install
           npx electron-builder --mac dir
       - uses: actions/upload-artifact@v4
         with:
@@ -51,7 +51,7 @@ jobs:
       - name: Install and Build Linux
         working-directory: ./desktop
         run: |
-          npm ci
+          npm install
           npx electron-builder --linux AppImage
       - uses: actions/upload-artifact@v4
         with:
