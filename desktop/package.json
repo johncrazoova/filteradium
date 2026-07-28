@@ -1,20 +1,16 @@
 {
   "name": "filteradium",
   "version": "1.0.0",
-  "description": "فیلترادیوم - پلتفرم فیلترنویسی هوشمند بورس ایران",
+  "description": "Filteradium - Smart Stock Filtering Platform",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "build:linux": "electron-builder --linux",
-    "build:all": "electron-builder --win --mac --linux"
+    "build": "electron-builder --dir",
+    "build:win": "electron-builder --win --dir",
+    "build:mac": "electron-builder --mac --dir",
+    "build:linux": "electron-builder --linux --dir"
   },
-  "author": "Filteradium Team",
-  "license": "MIT",
-  "dependencies": {
-    "electron-updater": "^6.1.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "electron": "^28.0.0",
     "electron-builder": "^24.9.0"
@@ -28,40 +24,19 @@
     "files": [
       "main.js",
       "preload.js",
-      "index.html",
-      "styles.css",
       "assets/**/*"
     ],
     "win": {
-      "target": [
-        "nsis",
-        "portable"
-      ],
-      "icon": "assets/icon.ico"
+      "target": "portable",
+      "icon": "assets/icon.png"
     },
     "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "icon": "assets/icon.icns",
-      "category": "public.app-category.finance"
+      "target": "dir",
+      "icon": "assets/icon.png"
     },
     "linux": {
-      "target": [
-        "AppImage",
-        "deb",
-        "rpm"
-      ],
-      "icon": "assets/icon.png",
-      "category": "Finance"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Filteradium"
+      "target": "AppImage",
+      "icon": "assets/icon.png"
     }
   }
 }
