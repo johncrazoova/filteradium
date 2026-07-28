@@ -86,6 +86,7 @@ function initDatabase() {
 // ========== TSETMC API Client ==========
 const TSETMC = {
   BASE: 'https://cdn.tsetmc.com',
+  BASE_HTTP: 'http://cdn.tsetmc.com',
   HEADERS: {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     'Accept': 'application/json, text/plain, */*',
@@ -94,7 +95,17 @@ const TSETMC = {
     'Origin': 'https://old.tsetmc.com'
   },
 
-  fetch(url) {
+  async fetchWithFallback(path) {
+    // Try HTTPS first, then HTTP
+    try {
+      return await this._fetch(this.BASE + path);
+    } catch (e) {
+      console.log('HTTPS failed, trying HTTP...');
+      return await this._fetch(this.BASE_HTTP + path);
+    }
+  },
+
+  _fetch(url) {
     return new Promise((resolve, reject) => {
       const client = url.startsWith('https') ? https : http;
       console.log('Fetching:', url);
@@ -128,13 +139,13 @@ const TSETMC = {
   },
 
   async getAllStocks() {
-    return this.fetch(`${this.BASE}/api/ClosingPrice/GetMarketWatch/1/0`);
+    return this.fetchWithFallback('/api/ClosingPrice/GetMarketWatch/1/0');
   },
 
   // Test connection
   async testConnection() {
     try {
-      const data = await this.fetch(`${this.BASE}/api/MarketData/GetMarketState`);
+      const data = await this.fetchWithFallback('/api/MarketData/GetMarketState');
       return { success: true, data };
     } catch (e) {
       return { success: false, error: e.message };
@@ -142,15 +153,15 @@ const TSETMC = {
   },
 
   async getHistory(insCode) {
-    return this.fetch(`${this.BASE}/api/ClosingPrice/GetClosingPriceHistory/${insCode}`);
+    return this.fetchWithFallback(`/api/ClosingPrice/GetClosingPriceHistory/${insCode}`);
   },
 
   async getClientType(insCode) {
-    return this.fetch(`${this.BASE}/api/ClientType/GetClientType/${insCode}/0`);
+    return this.fetchWithFallback(`/api/ClientType/GetClientType/${insCode}/0`);
   },
 
   async getShareholders(insCode) {
-    return this.fetch(`${this.BASE}/api/Shareholder/GetInstrumentShareholders/${insCode}`);
+    return this.fetchWithFallback(`/api/Shareholder/GetInstrumentShareholders/${insCode}`);
   }
 };
 
