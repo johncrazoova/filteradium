@@ -5,15 +5,15 @@
 
 Filteradium is a professional stock filtering and analysis platform for the Tehran Stock Exchange (TSETMC). It provides real-time market data, technical analysis indicators, and advanced filtering capabilities.
 
-### 📱 Available Platforms
+### 📥 Download
 
 | Platform | File | Size | Download |
 |----------|------|------|----------|
-| **Android** | `filteradium.apk` | ~22 KB | [Download](https://github.com/johncrazoova/filteradium/releases/download/v1.0-android/filteradium.apk) |
-| **Windows** | `Filteradium-Setup.exe` | Build needed | Build from source |
-| **macOS** | `Filteradium.dmg` | Build needed | Build from source |
-| **Linux** | `Filteradium.AppImage` | Build needed | Build from source |
-| **iOS** | Web App (PWA) | - | Use Safari |
+| 🪟 **Windows** | `Filteradium-1.0.0-Windows.exe` | 66.4 MB | [Download](https://github.com/johncrazoova/filteradium/releases/download/v1.0.0/Filteradium-1.0.0-Windows.exe) |
+| 🍎 **macOS** | Coming soon | - | Coming soon |
+| 🐧 **Linux** | `Filteradium-1.0.0-Linux.AppImage` | 99.5 MB | [Download](https://github.com/johncrazoova/filteradium/releases/download/v1.0.0/Filteradium-1.0.0-Linux.AppImage) |
+| 📱 **Android** | `Filteradium-1.0.0-Android.apk` | 22 KB | [Download](https://github.com/johncrazoova/filteradium/releases/download/v1.0.0/Filteradium-1.0.0-Android.apk) |
+| 🌐 **Web** | Online App | - | [Launch](#quick-start) |
 
 ### 📦 Project Structure
 
