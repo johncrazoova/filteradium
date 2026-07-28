@@ -64,6 +64,15 @@ body { background: var(--bg-primary); color: var(--text-primary); height: 100vh;
 .symbol-item input { accent-color: var(--accent); }
 .symbol-name { color: var(--text-primary); }
 .symbol-code { color: var(--text-secondary); font-size: 9px; margin-right: auto; }
+.select-actions { display: flex; gap: 4px; margin-top: 6px; }
+
+/* Sector Info */
+.sector-info { max-height: 150px; overflow-y: auto; margin-top: 8px; }
+.sector-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+.sector-row:hover { background: var(--bg-hover); }
+.sector-name { color: var(--text-primary); }
+.sector-count { background: var(--accent); color: #000; padding: 1px 6px; border-radius: 8px; font-size: 9px; font-weight: bold; }
+.empty-msg { color: var(--text-secondary); font-size: 11px; text-align: center; padding: 8px; }
 
 /* Content */
 .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }

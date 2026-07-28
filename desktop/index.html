@@ -26,12 +26,8 @@
           <div class="stat"><span class="stat-num" id="statClients">0</span><span class="stat-label">حقیقی/حقوقی</span></div>
           <div class="stat"><span class="stat-num" id="statShareholders">0</span><span class="stat-label">سهامداران</span></div>
         </div>
-        <button id="btnFetchStocks" class="btn btn-accent full-width" onclick="fetchAllStocks()">
-          🔄 دریافت لیست نمادها از TSETMC
-        </button>
-        <button id="btnTest" class="btn btn-info full-width" onclick="testConnection()" style="margin-top:6px">
-          🔌 تست اتصال
-        </button>
+        <button id="btnFetchStocks" class="btn btn-accent full-width" onclick="fetchAllStocks()">🔄 دریافت لیست نمادها از TSETMC</button>
+        <button id="btnTest" class="btn btn-info full-width" onclick="testConnection()" style="margin-top:4px">🔌 تست اتصال</button>
       </div>
 
       <div class="panel">
@@ -46,6 +42,7 @@
       <div class="panel">
         <h3>🏭 صنعت</h3>
         <select id="sectorFilter" class="select"><option value="all">همه صنایع</option></select>
+        <div id="sectorInfo" class="sector-info"></div>
       </div>
 
       <div class="panel">
@@ -64,8 +61,12 @@
       </div>
 
       <div class="panel">
-        <h3>🔍 نماد</h3>
+        <h3>🔍 نماد <span style="font-weight:normal;font-size:10px;color:var(--text-secondary)">(Click to select)</span></h3>
         <input type="text" id="symbolSearch" placeholder="جستجو..." class="input">
+        <div class="select-actions">
+          <button class="btn-sm" onclick="selectAll()">انتخاب همه</button>
+          <button class="btn-sm" onclick="deselectAll()">حذف انتخاب</button>
+        </div>
         <div id="symbolList" class="symbol-list"></div>
       </div>
     </aside>

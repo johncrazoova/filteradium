@@ -2,40 +2,18 @@ let allStocks = [];
 let selectedStocks = [];
 let allData = {};
 
-// ========== TSETMC API (via browser fetch) ==========
-const API_URLS = [
-  'https://cdn.tsetmc.com',
-  'http://cdn.tsetmc.com',
-  'https://tsetmc.com',
-  'http://tsetmc.com',
-];
+// ========== TSETMC API ==========
+const API_URLS = ['https://cdn.tsetmc.com', 'http://cdn.tsetmc.com', 'https://tsetmc.com', 'http://tsetmc.com'];
 
 async function apiFetch(path) {
   for (const base of API_URLS) {
     try {
-      const url = base + path;
-      console.log('[API] Trying:', url);
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      if (!res.ok) {
-        console.log('[API] HTTP', res.status, 'from', base);
-        continue;
-      }
+      const res = await fetch(base + path, { method: 'GET', headers: { 'Accept': 'application/json' } });
+      if (!res.ok) continue;
       const text = await res.text();
-      if (!text || !text.trim()) {
-        console.log('[API] Empty from', base);
-        continue;
-      }
-      const data = JSON.parse(text);
-      console.log('[API] Success from', base);
-      return data;
-    } catch (e) {
-      console.log('[API] Failed:', base, e.message);
-    }
+      if (!text?.trim()) continue;
+      return JSON.parse(text);
+    } catch (e) { console.log('[API] Failed:', base, e.message); }
   }
   throw new Error('تمام سرورها در دسترس نیستند');
 }
@@ -46,7 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadSectors();
   setDefaultDates();
   updateStats();
-  window.api.onProgress(updateProgress);
+  renderSectorInfo();
 });
 
 async function loadStocks() { allStocks = await window.api.getStocks(); renderSymbolList(allStocks); }
@@ -66,14 +44,48 @@ async function updateStats() {
   document.getElementById('statShareholders').textContent = s.shareholders;
 }
 
+// ========== Sector Info ==========
+function renderSectorInfo() {
+  const container = document.getElementById('sectorInfo');
+  if (!container) return;
+  
+  if (allStocks.length === 0) {
+    container.innerHTML = '<div class="empty-msg">هنوز داده‌ای دریافت نشده</div>';
+    return;
+  }
+
+  // Group by sector
+  const sectors = {};
+  allStocks.forEach(s => {
+    const sec = s.sector || 'نامشخص';
+    if (!sectors[sec]) sectors[sec] = [];
+    sectors[sec].push(s);
+  });
+
+  // Sort by count
+  const sorted = Object.entries(sectors).sort((a, b) => b[1].length - a[1].length);
+
+  container.innerHTML = sorted.map(([name, stocks]) => `
+    <div class="sector-row" onclick="filterBySector('${name}')">
+      <span class="sector-name">${name}</span>
+      <span class="sector-count">${stocks.length}</span>
+    </div>
+  `).join('');
+}
+
+function filterBySector(sector) {
+  document.getElementById('sectorFilter').value = sector;
+  renderSymbolList(allStocks);
+}
+
 // ========== Test Connection ==========
 async function testConnection() {
   const btn = document.getElementById('btnTest');
   btn.disabled = true;
   btn.innerHTML = '⏳ در حال تست...';
   try {
-    const data = await apiFetch('/api/MarketData/GetMarketState');
-    alert('✅ اتصال برقرار است!\nسرور TSETMC در دسترس می‌باشد.');
+    await apiFetch('/api/MarketData/GetMarketState');
+    alert('✅ اتصال برقرار است!');
   } catch (e) {
     alert('❌ اتصال برقرار نشد:\n' + e.message);
   } finally {
@@ -82,25 +94,18 @@ async function testConnection() {
   }
 }
 
-// ========== Fetch from TSETMC ==========
+// ========== Fetch ==========
 async function fetchAllStocks() {
   const btn = document.getElementById('btnFetchStocks');
-  btn.disabled = true;
-  btn.innerHTML = '⏳ دریافت...';
+  btn.disabled = true; btn.innerHTML = '⏳ دریافت...';
   try {
     const data = await apiFetch('/api/ClosingPrice/GetMarketWatch/1/0');
-    if (!data || !data.closingPriceAll) throw new Error('داده‌ای دریافت نشد');
+    if (!data?.closingPriceAll) throw new Error('داده‌ای دریافت نشد');
     const r = await window.api.saveStocks(data.closingPriceAll);
     alert(`✅ ${r.count} نماد دریافت شد`);
-    await loadStocks();
-    await loadSectors();
-    await updateStats();
-  } catch (e) {
-    alert('❌ ' + e.message);
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '🔄 دریافت لیست نمادها از TSETMC';
-  }
+    await loadStocks(); await loadSectors(); await updateStats(); renderSectorInfo();
+  } catch (e) { alert('❌ ' + e.message); }
+  finally { btn.disabled = false; btn.innerHTML = '🔄 دریافت لیست نمادها از TSETMC'; }
 }
 
 async function fetchData() {
@@ -109,8 +114,8 @@ async function fetchData() {
   const types = getSelectedTypes();
   const insCodes = selectedStocks.length > 0 ? selectedStocks : getFilteredStocks().map(s => s.ins_code);
 
-  if (types.length === 0) { alert('لطفاً حداقل یک نوع داده انتخاب کنید'); btn.disabled = false; return; }
-  if (insCodes.length === 0) { alert('لطفاً نمادی رو انتخاب کنید'); btn.disabled = false; return; }
+  if (!types.length) { alert('لطفاً حداقل یک نوع داده انتخاب کنید'); btn.disabled = false; return; }
+  if (!insCodes.length) { alert('لطفاً نمادی رو انتخاب کنید'); btn.disabled = false; return; }
 
   let fetched = { price: 0, client: 0, shareholder: 0 };
 
@@ -122,23 +127,20 @@ async function fetchData() {
       try {
         const data = await apiFetch(`/api/ClosingPrice/GetClosingPriceHistory/${code}`);
         if (data?.closingPriceHistory) { await window.api.savePriceHistory({ insCode: code, data: data.closingPriceHistory }); fetched.price++; }
-      } catch (e) { console.log('Price error:', e.message); }
+      } catch (e) {}
     }
-
     if (types.includes('client')) {
       try {
         const data = await apiFetch(`/api/ClientType/GetClientType/${code}/0`);
         if (data) { await window.api.saveClientType({ insCode: code, data }); fetched.client++; }
-      } catch (e) { console.log('Client error:', e.message); }
+      } catch (e) {}
     }
-
     if (types.includes('shareholder')) {
       try {
         const data = await apiFetch(`/api/Shareholder/GetInstrumentShareholders/${code}`);
         if (data) { await window.api.saveShareholders({ insCode: code, data }); fetched.shareholder++; }
-      } catch (e) { console.log('Shareholder error:', e.message); }
+      } catch (e) {}
     }
-
     await new Promise(r => setTimeout(r, 200));
   }
 
@@ -148,13 +150,8 @@ async function fetchData() {
   if (types.includes('shareholder')) msg += `  🏢 سهامداران: ${fetched.shareholder} نماد`;
   alert(msg);
 
-  btn.disabled = false;
-  btn.innerHTML = '🔄 دریافت و ذخیره داده';
+  btn.disabled = false; btn.innerHTML = '🔄 دریافت و ذخیره داده';
   await updateStats();
-}
-
-function updateProgress({ current, total }) {
-  document.getElementById('btnFetch').innerHTML = `⏳ ${current}/${total}`;
 }
 
 function getSelectedTypes() {
@@ -169,6 +166,7 @@ async function displayData() {
   const endDate = document.getElementById('endDate').value;
   const insCodes = selectedStocks.length > 0 ? selectedStocks : getFilteredStocks().map(s => s.ins_code);
   const types = getSelectedTypes();
+
   if (!insCodes.length) { alert('نمادی انتخاب نشده'); return; }
   if (!types.length) { alert('نوع داده‌ای انتخاب نشده'); return; }
 
@@ -181,7 +179,16 @@ async function displayData() {
   if (allData.price?.length) renderTable(allData.price, 'price');
   else if (allData.client?.length) renderTable(allData.client, 'client');
   else if (allData.shareholder?.length) renderTable(allData.shareholder, 'shareholder');
-  else { renderTable([], ''); alert('داده‌ای یافت نشد'); }
+  else { renderTable([], ''); showNoData(); }
+}
+
+function showNoData() {
+  document.getElementById('emptyState').innerHTML = `
+    <span class="empty-icon">📭</span>
+    <h3>داده‌ای یافت نشد</h3>
+    <p>برای نمادهای انتخاب شده در این بازه زمانی داده‌ای موجود نیست</p>
+    <p>ابتدا داده رو دریافت کنید یا بازه زمانی رو تغییر بدید</p>
+  `;
 }
 
 function switchTab(type) {
@@ -237,6 +244,12 @@ function renderSymbolList(stocks) {
   let f = stocks;
   if (q) f = f.filter(s => (s.symbol||'').toLowerCase().includes(q) || (s.name||'').toLowerCase().includes(q));
   if (sec !== 'all') f = f.filter(s => s.sector === sec);
+
+  if (f.length === 0) {
+    c.innerHTML = '<div class="empty-msg">نمادی یافت نشد</div>';
+    return;
+  }
+
   f.forEach(s => {
     const d = document.createElement('div');
     d.className = `symbol-item ${selectedStocks.includes(s.ins_code) ? 'selected' : ''}`;
@@ -245,6 +258,9 @@ function renderSymbolList(stocks) {
     c.appendChild(d);
   });
 }
+
+function selectAll() { selectedStocks = getFilteredStocks().map(s => s.ins_code); renderSymbolList(allStocks); }
+function deselectAll() { selectedStocks = []; renderSymbolList(allStocks); }
 
 function getFilteredStocks() { const sec = document.getElementById('sectorFilter').value; return sec === 'all' ? allStocks : allStocks.filter(s => s.sector === sec); }
 document.getElementById('symbolSearch').addEventListener('input', () => renderSymbolList(allStocks));
