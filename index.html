@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>فیلترادیوم | پلتفرم فیلترنویسی هوشمند بورس</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="logo">
+        <span class="logo-icon">📊</span>
+        <span class="logo-text">فیلترادیوم</span>
+      </div>
+      <nav class="nav">
+        <a href="#features" class="nav-link">امکانات</a>
+        <a href="#filters" class="nav-link">فیلترها</a>
+        <a href="#pricing" class="nav-link">تعرفه</a>
+        <a href="#login" class="nav-link btn-login">ورود</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <h1 class="hero-title">
+        فیلترنویسی <span class="gradient-text">هوشمند</span> بورس
+      </h1>
+      <p class="hero-subtitle">
+        سهام‌های مناسب رو با فیلترهای پیشرفته پیدا کن، بدون نیاز به کدنویسی
+      </p>
+      <div class="hero-cta">
+        <a href="#filters" class="btn btn-primary">شروع رایگان</a>
+        <a href="#demo" class="btn btn-secondary">مشاهده دمو</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-number">۵۰۰+</span>
+          <span class="stat-label">نماد فعال</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">۵۰+</span>
+          <span class="stat-label">فیلتر آماده</span>
+        </div>
+        <div class="stat">
+          <span class="stat-number">۱۰۰۰+</span>
+          <span class="stat-label">کاربر فعال</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features">
+    <div class="container">
+      <h2 class="section-title">چرا فیلترادیوم؟</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3>فیلترنویسی ساده</h3>
+          <p>بدون کدنویسی، فقط شرط‌ها رو تنظیم کن</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>پردازش لحظه‌ای</h3>
+          <p>داده‌های بازار هر لحظه آپدیت میشه</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🤖</div>
+          <h3>سیگنال هوش مصنوعی</h3>
+          <p>تحلیل خودکار با الگوریتم‌های پیشرفته</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📱</div>
+          <h3>هشدار تلگرام</h3>
+          <p>سیگنال‌ها رو مستقیم در تلگرام دریافت کن</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filter Builder Section -->
+  <section id="filters" class="filter-builder">
+    <div class="container">
+      <h2 class="section-title">ساخت فیلتر</h2>
+      <div class="filter-workspace">
+        <!-- Filter Conditions -->
+        <div class="filter-panel">
+          <h3>شرایط فیلتر</h3>
+          <div id="filter-conditions">
+            <div class="condition-row">
+              <select class="condition-field">
+                <option value="">انتخاب کنید...</option>
+                <option value="plp">درصد تغییر قیمت</option>
+                <option value="tvol">حجم معاملات</option>
+                <option value="tval">ارزش معاملات</option>
+                <option value="pe">نسبت قیمت به سود</option>
+                <option value="eps">سود هر سهم</option>
+                <option value="buy_ratio">نسبت خرید به فروش</option>
+              </select>
+              <select class="condition-operator">
+                <option value=">">بزرگتر از</option>
+                <option value="<">کوچکتر از</option>
+                <option value=">=">بزرگتر مساوی</option>
+                <option value="<=">کوچکتر مساوی</option>
+                <option value="==">مساوی</option>
+              </select>
+              <input type="number" class="condition-value" placeholder="مقدار">
+              <button class="btn-remove" onclick="removeCondition(this)">✕</button>
+            </div>
+          </div>
+          <button class="btn btn-add" onclick="addCondition()">+ افزودن شرط</button>
+        </div>
+
+        <!-- Filter Preview -->
+        <div class="filter-preview">
+          <h3>پیش‌نمایش فیلتر</h3>
+          <div id="filter-code" class="code-block">
+            // کد فیلتر شما اینجا نمایش داده میشه
+          </div>
+          <button class="btn btn-primary" onclick="runFilter()">اجرای فیلتر</button>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="results" class="results-panel" style="display: none;">
+        <h3>نتایج فیلتر</h3>
+        <div class="results-stats">
+          <span id="result-count">۰ نتیجه</span>
+          <span id="result-time">زمان اجرا: ۰ms</span>
+        </div>
+        <div class="results-table">
+          <table>
+            <thead>
+              <tr>
+                <th>نماد</th>
+                <th>نام</th>
+                <th>قیمت</th>
+                <th>تغییر%</th>
+                <th>حجم</th>
+                <th>امتیاز</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="results-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pre-built Filters -->
+  <section class="prefilters">
+    <div class="container">
+      <h2 class="section-title">فیلترهای آماده</h2>
+      <div class="prefilters-grid">
+        <div class="prefilter-card" onclick="loadPreFilter('momentum')">
+          <div class="prefilter-icon">🚀</div>
+          <h3>مومنتوم قوی</h3>
+          <p>سهم‌های با رشد پیوسته و حجم بالا</p>
+        </div>
+        <div class="prefilter-card" onclick="loadPreFilter('value')">
+          <div class="prefilter-icon">💎</div>
+          <h3>سهم‌های ارزان</h3>
+          <p>pe پایین و eps بالا</p>
+        </div>
+        <div class="prefilter-card" onclick="loadPreFilter('smart_money')">
+          <div class="prefilter-icon">🐋</div>
+          <h3>ورود پول هوشمند</h3>
+          <p>خرید سنگین حقوقی</p>
+        </div>
+        <div class="prefilter-card" onclick="loadPreFilter('oversold')">
+          <div class="prefilter-icon">📉</div>
+          <h3>اُورسولد</h3>
+          <p>سهم‌های افت شدید با پتانسیل برگشت</p>
+        </div>
+        <div class="prefilter-card" onclick="loadPreFilter('breakout')">
+          <div class="prefilter-icon">🔥</div>
+          <h3>شکست مقاومت</h3>
+          <p>عبور از مقاومت با تایید حجم</p>
+        </div>
+        <div class="prefilter-card" onclick="loadPreFilter('dividend')">
+          <div class="prefilter-icon">💰</div>
+          <h3>سهامداری</h3>
+          <p>سهم‌های مناسب نگهداری بلندمدت</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="pricing">
+    <div class="container">
+      <h2 class="section-title">تعرفه‌ها</h2>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <h3>رایگان</h3>
+          <div class="price">۰ <span>تومان/ماه</span></div>
+          <ul>
+            <li>۳ فیلتر ساده</li>
+            <li>قیمت لحظه‌ای</li>
+            <li>۱۰ نتیجه در روز</li>
+          </ul>
+          <button class="btn btn-secondary">شروع رایگان</button>
+        </div>
+        <div class="pricing-card popular">
+          <div class="popular-badge">محبوب‌ترین</div>
+          <h3>حرفه‌ای</h3>
+          <div class="price">۲۹۹ <span>تومان/ماه</span></div>
+          <ul>
+            <li>فیلترهای نامحدود</li>
+            <li>تحلیل تکنیکال</li>
+            <li>۵ سیگنال روزانه</li>
+            <li>هشدار تلگرام</li>
+          </ul>
+          <button class="btn btn-primary">خرید اشتراک</button>
+        </div>
+        <div class="pricing-card">
+          <h3>سازمانی</h3>
+          <div class="price">۹۹۹ <span>تومان/ماه</span></div>
+          <ul>
+            <li>همه امکانات حرفه‌ای</li>
+            <li>API اختصاصی</li>
+            <li>سیگنال نامحدود</li>
+            <li>پشتیبانی اختصاصی</li>
+          </ul>
+          <button class="btn btn-secondary">تماس با ما</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <span class="logo-icon">📊</span>
+          <span class="logo-text">فیلترادیوم</span>
+          <p>پلتفرم فیلترنویسی هوشمند بورس ایران</p>
+        </div>
+        <div class="footer-links">
+          <h4>لینک‌ها</h4>
+          <a href="#">درباره ما</a>
+          <a href="#">قوانین</a>
+          <a href="#">حریم خصوصی</a>
+        </div>
+        <div class="footer-contact">
+          <h4>ارتباط با ما</h4>
+          <a href="#">تلگرام</a>
+          <a href="#">ایمیل</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© ۱۴۰۴ فیلترادیوم. تمامی حقوق محفوظ است.</p>
+        <p class="disclaimer">هشدار: بورس دارای ریسک است. قبل از سرمایه‌گذاری تحقیق کنید.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="lib/filters.js"></script>
+  <script src="lib/app.js"></script>
+</body>
+</html>
