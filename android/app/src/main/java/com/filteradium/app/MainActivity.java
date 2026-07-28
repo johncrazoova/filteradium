@@ -2,18 +2,15 @@ package com.filteradium.app;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ProgressBar;
 
 public class MainActivity extends Activity {
     private WebView webView;
-    private ProgressBar progressBar;
     private static final String SERVER_URL = "http://10.0.2.2:8000";
 
     @Override
@@ -29,7 +26,6 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         
         webView = (WebView) findViewById(R.id.webView);
-        progressBar = (ProgressBar) findViewById(R.id.progressBar);
         
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -81,19 +77,14 @@ public class MainActivity extends Activity {
     private class AppWebViewClient extends WebViewClient {
         @Override
         public void onPageFinished(WebView view, String url) {
-            progressBar.setVisibility(View.GONE);
+            // Page loaded
         }
     }
 
     private class AppChromeClient extends WebChromeClient {
         @Override
         public void onProgressChanged(WebView view, int newProgress) {
-            if (newProgress < 100) {
-                progressBar.setVisibility(View.VISIBLE);
-                progressBar.setProgress(newProgress);
-            } else {
-                progressBar.setVisibility(View.GONE);
-            }
+            // Progress updated
         }
     }
 }
