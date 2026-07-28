@@ -81,8 +81,6 @@ function initDatabase() {
       status TEXT
     );
   `);
-
-  console.log('Database initialized:', dbPath);
 }
 
 // ========== TSETMC API Client ==========
@@ -90,66 +88,74 @@ const TSETMC = {
   BASE: 'https://cdn.tsetmc.com',
   HEADERS: {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-    'Accept': 'application/json',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'fa-IR,fa;q=0.9,en-US;q=0.8',
     'Referer': 'https://old.tsetmc.com/',
     'Origin': 'https://old.tsetmc.com'
   },
 
-  async fetch(url) {
+  fetch(url) {
     return new Promise((resolve, reject) => {
       const client = url.startsWith('https') ? https : http;
       const req = client.get(url, { headers: this.HEADERS, timeout: 30000 }, (res) => {
         let data = '';
         res.on('data', chunk => data += chunk);
         res.on('end', () => {
+          if (!data || data.trim() === '') {
+            reject(new Error('پاسخ خالی از سرور - اتصال به TSETMC ممکن نیست'));
+            return;
+          }
           try {
             resolve(JSON.parse(data));
           } catch (e) {
-            reject(e);
+            reject(new Error('خطا در پردازش داده - اتصال به TSETMC ممکن نیست'));
           }
         });
       });
-      req.on('error', reject);
-      req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+      req.on('error', (e) => {
+        reject(new Error('خطای شبکه - آیا به اینترنت ایران متصل هستید؟'));
+      });
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('زمان اتصال تمام شد - سرور در دسترس نیست'));
+      });
     });
   },
 
-  // Get all stocks
   async getAllStocks() {
     return this.fetch(`${this.BASE}/api/ClosingPrice/GetMarketWatch/1/0`);
   },
 
-  // Get stock history
   async getHistory(insCode) {
     return this.fetch(`${this.BASE}/api/ClosingPrice/GetClosingPriceHistory/${insCode}`);
   },
 
-  // Get client type
   async getClientType(insCode) {
     return this.fetch(`${this.BASE}/api/ClientType/GetClientType/${insCode}/0`);
   },
 
-  // Get shareholders
   async getShareholders(insCode) {
     return this.fetch(`${this.BASE}/api/Shareholder/GetInstrumentShareholders/${insCode}`);
-  },
-
-  // Search instruments
-  async search(term) {
-    return this.fetch(`${this.BASE}/api/Instrument/GetInstrumentSearch/${term}`);
   }
 };
 
 // ========== IPC Handlers ==========
 
-// Get all stocks from local DB
 ipcMain.handle('get-stocks', () => {
   return db.prepare('SELECT * FROM stocks ORDER BY symbol').all();
 });
 
-// Get sectors
 ipcMain.handle('get-sectors', () => {
   return db.prepare('SELECT DISTINCT sector FROM stocks WHERE sector IS NOT NULL ORDER BY sector').all();
+});
+
+ipcMain.handle('get-stats', () => {
+  return {
+    stocks: db.prepare('SELECT COUNT(*) as c FROM stocks').get().c,
+    history: db.prepare('SELECT COUNT(*) as c FROM price_history').get().c,
+    clientType: db.prepare('SELECT COUNT(*) as c FROM client_type').get().c,
+    shareholders: db.prepare('SELECT COUNT(*) as c FROM shareholders').get().c,
+  };
 });
 
 // Fetch all stocks from TSETMC
@@ -157,7 +163,7 @@ ipcMain.handle('fetch-all-stocks', async () => {
   try {
     const data = await TSETMC.getAllStocks();
     if (!data || !data.closingPriceAll) {
-      throw new Error('No data received');
+      throw new Error('داده‌ای دریافت نشد');
     }
 
     const insert = db.prepare(`
@@ -189,143 +195,103 @@ ipcMain.handle('fetch-all-stocks', async () => {
   }
 });
 
-// Fetch history for a stock
-ipcMain.handle('fetch-history', async (event, insCode) => {
-  try {
-    const data = await TSETMC.getHistory(insCode);
-    if (!data || !data.closingPriceHistory) {
-      throw new Error('No history data');
+// Fetch data for selected stocks (supports multiple types)
+ipcMain.handle('fetch-stock-data', async (event, { insCodes, types }) => {
+  let fetched = { price: 0, client: 0, shareholder: 0 };
+  const total = insCodes.length;
+
+  for (let i = 0; i < insCodes.length; i++) {
+    const insCode = insCodes[i];
+
+    if (types.includes('price')) {
+      try {
+        const data = await TSETMC.getHistory(insCode);
+        if (data && data.closingPriceHistory) {
+          const insert = db.prepare(`INSERT OR REPLACE INTO price_history
+            (ins_code, date, open, high, low, close, last, volume, value, change, change_pct)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+          for (const h of data.closingPriceHistory) {
+            const d = String(h.dEven);
+            insert.run(insCode, `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`,
+              h.priceFirst, h.priceMax, h.priceMin, h.pClosing, h.pDrCotVal,
+              h.qTotTran5J, h.qTotCap, h.priceChange, 0);
+          }
+          fetched.price++;
+        }
+      } catch (e) { console.error('Price error:', e.message); }
     }
 
-    const insert = db.prepare(`
-      INSERT OR REPLACE INTO price_history (ins_code, date, open, high, low, close, last, volume, value, change, change_pct)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+    if (types.includes('client')) {
+      try {
+        const data = await TSETMC.getClientType(insCode);
+        if (data) {
+          const today = new Date().toISOString().split('T')[0];
+          db.prepare(`INSERT OR REPLACE INTO client_type
+            (ins_code, date, individual_buy_count, individual_sell_count,
+             individual_buy_volume, individual_sell_volume,
+             corporate_buy_count, corporate_sell_count,
+             corporate_buy_volume, corporate_sell_volume)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+            insCode, today, data.buy_I_Count, data.sell_I_Count,
+            data.buy_I_Volume, data.sell_I_Volume,
+            data.buy_N_Count, data.sell_N_Count,
+            data.buy_N_Volume, data.sell_N_Volume
+          );
+          fetched.client++;
+        }
+      } catch (e) { console.error('Client error:', e.message); }
+    }
 
-    const transaction = db.transaction((items) => {
-      for (const h of items) {
-        const dateStr = String(h.dEven);
-        const date = `${dateStr.slice(0,4)}-${dateStr.slice(4,6)}-${dateStr.slice(6,8)}`;
-        insert.run(
-          insCode, date, h.priceFirst, h.priceMax, h.priceMin,
-          h.pClosing, h.pDrCotVal, h.qTotTran5J, h.qTotCap,
-          h.priceChange, 0
-        );
-      }
-    });
+    if (types.includes('shareholder')) {
+      try {
+        const data = await TSETMC.getShareholders(insCode);
+        if (data) {
+          const today = new Date().toISOString().split('T')[0];
+          db.prepare(`INSERT OR REPLACE INTO shareholders (ins_code, date, data)
+            VALUES (?, ?, ?)`).run(insCode, today, JSON.stringify(data));
+          fetched.shareholder++;
+        }
+      } catch (e) { console.error('Shareholder error:', e.message); }
+    }
 
-    transaction(data.closingPriceHistory);
-    return { success: true, count: data.closingPriceHistory.length };
-  } catch (e) {
-    return { success: false, error: e.message };
+    // Progress callback
+    if (mainWindow) {
+      mainWindow.webContents.send('fetch-progress', { current: i + 1, total });
+    }
+
+    // Rate limit
+    await new Promise(r => setTimeout(r, 100));
   }
+
+  return { success: true, fetched };
 });
 
-// Fetch client type for a stock
-ipcMain.handle('fetch-client-type', async (event, insCode) => {
-  try {
-    const data = await TSETMC.getClientType(insCode);
-    if (!data) throw new Error('No data');
-
-    const today = new Date().toISOString().split('T')[0];
-    db.prepare(`INSERT OR REPLACE INTO client_type
-      (ins_code, date, individual_buy_count, individual_sell_count,
-       individual_buy_volume, individual_sell_volume,
-       corporate_buy_count, corporate_sell_count,
-       corporate_buy_volume, corporate_sell_volume)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-      insCode, today,
-      data.buy_I_Count, data.sell_I_Count,
-      data.buy_I_Volume, data.sell_I_Volume,
-      data.buy_N_Count, data.sell_N_Count,
-      data.buy_N_Volume, data.sell_N_Volume
-    );
-
-    return { success: true };
-  } catch (e) {
-    return { success: false, error: e.message };
-  }
-});
-
-// Fetch shareholders for a stock
-ipcMain.handle('fetch-shareholders', async (event, insCode) => {
-  try {
-    const data = await TSETMC.getShareholders(insCode);
-    if (!data) throw new Error('No data');
-
-    const today = new Date().toISOString().split('T')[0];
-    db.prepare(`INSERT OR REPLACE INTO shareholders (ins_code, date, data)
-      VALUES (?, ?, ?)`).run(insCode, today, JSON.stringify(data));
-
-    return { success: true };
-  } catch (e) {
-    return { success: false, error: e.message };
-  }
-});
-
-// Get price history from local DB
+// Local DB queries
 ipcMain.handle('get-price-history', (event, { insCodes, startDate, endDate }) => {
-  let query = `SELECT ph.*, s.symbol FROM price_history ph
-    LEFT JOIN stocks s ON ph.ins_code = s.ins_code WHERE 1=1`;
-  const params = [];
-
-  if (insCodes && insCodes.length > 0) {
-    query += ` AND ph.ins_code IN (${insCodes.map(() => '?').join(',')})`;
-    params.push(...insCodes);
-  }
-  if (startDate) { query += ' AND ph.date >= ?'; params.push(startDate); }
-  if (endDate) { query += ' AND ph.date <= ?'; params.push(endDate); }
-
-  query += ' ORDER BY ph.ins_code, ph.date';
-  return db.prepare(query).all(...params);
+  let q = `SELECT ph.*, s.symbol FROM price_history ph LEFT JOIN stocks s ON ph.ins_code = s.ins_code WHERE 1=1`;
+  const p = [];
+  if (insCodes && insCodes.length) { q += ` AND ph.ins_code IN (${insCodes.map(()=>'?').join(',')})`; p.push(...insCodes); }
+  if (startDate) { q += ' AND ph.date >= ?'; p.push(startDate); }
+  if (endDate) { q += ' AND ph.date <= ?'; p.push(endDate); }
+  return db.prepare(q + ' ORDER BY ph.ins_code, ph.date').all(...p);
 });
 
-// Get client type from local DB
 ipcMain.handle('get-client-type-local', (event, { insCodes, startDate, endDate }) => {
-  let query = `SELECT ct.*, s.symbol FROM client_type ct
-    LEFT JOIN stocks s ON ct.ins_code = s.ins_code WHERE 1=1`;
-  const params = [];
-
-  if (insCodes && insCodes.length > 0) {
-    query += ` AND ct.ins_code IN (${insCodes.map(() => '?').join(',')})`;
-    params.push(...insCodes);
-  }
-  if (startDate) { query += ' AND ct.date >= ?'; params.push(startDate); }
-  if (endDate) { query += ' AND ct.date <= ?'; params.push(endDate); }
-
-  query += ' ORDER BY ct.ins_code, ct.date';
-  return db.prepare(query).all(...params);
+  let q = `SELECT ct.*, s.symbol FROM client_type ct LEFT JOIN stocks s ON ct.ins_code = s.ins_code WHERE 1=1`;
+  const p = [];
+  if (insCodes && insCodes.length) { q += ` AND ct.ins_code IN (${insCodes.map(()=>'?').join(',')})`; p.push(...insCodes); }
+  if (startDate) { q += ' AND ct.date >= ?'; p.push(startDate); }
+  if (endDate) { q += ' AND ct.date <= ?'; p.push(endDate); }
+  return db.prepare(q + ' ORDER BY ct.ins_code, ct.date').all(...p);
 });
 
-// Get shareholders from local DB
 ipcMain.handle('get-shareholders-local', (event, { insCodes, startDate, endDate }) => {
-  let query = `SELECT sh.*, s.symbol FROM shareholders sh
-    LEFT JOIN stocks s ON sh.ins_code = s.ins_code WHERE 1=1`;
-  const params = [];
-
-  if (insCodes && insCodes.length > 0) {
-    query += ` AND sh.ins_code IN (${insCodes.map(() => '?').join(',')})`;
-    params.push(...insCodes);
-  }
-  if (startDate) { query += ' AND sh.date >= ?'; params.push(startDate); }
-  if (endDate) { query += ' AND sh.date <= ?'; params.push(endDate); }
-
-  return db.prepare(query).all(...params);
-});
-
-// Get update log
-ipcMain.handle('get-update-log', () => {
-  return db.prepare('SELECT * FROM update_log ORDER BY id DESC LIMIT 20').all();
-});
-
-// Get DB stats
-ipcMain.handle('get-stats', () => {
-  return {
-    stocks: db.prepare('SELECT COUNT(*) as count FROM stocks').get().count,
-    history: db.prepare('SELECT COUNT(*) as count FROM price_history').get().count,
-    clientType: db.prepare('SELECT COUNT(*) as count FROM client_type').get().count,
-    shareholders: db.prepare('SELECT COUNT(*) as count FROM shareholders').get().count,
-  };
+  let q = `SELECT sh.*, s.symbol FROM shareholders sh LEFT JOIN stocks s ON sh.ins_code = s.ins_code WHERE 1=1`;
+  const p = [];
+  if (insCodes && insCodes.length) { q += ` AND sh.ins_code IN (${insCodes.map(()=>'?').join(',')})`; p.push(...insCodes); }
+  if (startDate) { q += ' AND sh.date >= ?'; p.push(startDate); }
+  if (endDate) { q += ' AND sh.date <= ?'; p.push(endDate); }
+  return db.prepare(q).all(...p);
 });
 
 // Export CSV
@@ -334,20 +300,18 @@ ipcMain.handle('export-csv', async (event, { data, filename }) => {
     defaultPath: filename || 'export.csv',
     filters: [{ name: 'CSV', extensions: ['csv'] }]
   });
-
   if (!result.canceled && result.filePath && data.length > 0) {
     const headers = Object.keys(data[0]);
     const csv = [
       headers.join(','),
       ...data.map(row => headers.map(h => {
-        const val = row[h];
-        if (val === null || val === undefined) return '';
-        if (typeof val === 'string' && (val.includes(',') || val.includes('"')))
-          return `"${val.replace(/"/g, '""')}"`;
-        return val;
+        const v = row[h];
+        if (v === null || v === undefined) return '';
+        if (typeof v === 'string' && (v.includes(',') || v.includes('"')))
+          return `"${v.replace(/"/g, '""')}"`;
+        return v;
       }).join(','))
     ].join('\n');
-
     fs.writeFileSync(result.filePath, '\ufeff' + csv, 'utf-8');
     return { success: true, path: result.filePath };
   }
@@ -360,11 +324,30 @@ ipcMain.handle('export-excel', async (event, { data, filename, sheetName }) => {
     defaultPath: filename || 'export.xlsx',
     filters: [{ name: 'Excel', extensions: ['xlsx'] }]
   });
-
   if (!result.canceled && result.filePath && data.length > 0) {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(data);
     XLSX.utils.book_append_sheet(wb, ws, sheetName || 'Data');
+    XLSX.writeFile(wb, result.filePath);
+    return { success: true, path: result.filePath };
+  }
+  return { success: false };
+});
+
+// Export multi-sheet Excel
+ipcMain.handle('export-excel-multi', async (event, { sheets, filename }) => {
+  const result = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: filename || 'export.xlsx',
+    filters: [{ name: 'Excel', extensions: ['xlsx'] }]
+  });
+  if (!result.canceled && result.filePath) {
+    const wb = XLSX.utils.book_new();
+    for (const sheet of sheets) {
+      if (sheet.data.length > 0) {
+        const ws = XLSX.utils.json_to_sheet(sheet.data);
+        XLSX.utils.book_append_sheet(wb, ws, sheet.name);
+      }
+    }
     XLSX.writeFile(wb, result.filePath);
     return { success: true, path: result.filePath };
   }
@@ -381,7 +364,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false
     },
-    title: 'Filteradium',
+    title: 'FilteradiumExClient',
     backgroundColor: '#0B0B1A'
   });
 

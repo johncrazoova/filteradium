@@ -2,15 +2,15 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>Filteradium</title>
+  <title>FilteradiumExClient</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="header">
     <div class="header-right">
       <span class="logo">F</span>
-      <h1>FILTERADIUM</h1>
-      <span class="subtitle">استخراج و صادرات داده بورس</span>
+      <h1>FILTERADIUM EX CLIENT</h1>
+      <span class="subtitle">استخراج اطلاعات بورس ایران</span>
     </div>
   </header>
 
@@ -30,21 +30,24 @@
         </button>
       </div>
 
-      <!-- Data Type -->
+      <!-- Data Types - Checkboxes -->
       <div class="panel">
-        <h3>📊 نوع داده</h3>
-        <div class="radio-group">
-          <label class="radio-item active" data-type="price">
-            <input type="radio" name="dataType" value="price" checked>
-            <span class="radio-icon">📈</span><span>قیمت و حجم</span>
+        <h3>📊 نوع داده (چند انتخابی)</h3>
+        <div class="check-group">
+          <label class="check-item">
+            <input type="checkbox" class="type-check" value="price" checked>
+            <span class="check-icon">📈</span>
+            <span>قیمت و حجم</span>
           </label>
-          <label class="radio-item" data-type="client">
-            <input type="radio" name="dataType" value="client">
-            <span class="radio-icon">👥</span><span>حقیقی/حقوقی</span>
+          <label class="check-item">
+            <input type="checkbox" class="type-check" value="client">
+            <span class="check-icon">👥</span>
+            <span>حقیقی/حقوقی</span>
           </label>
-          <label class="radio-item" data-type="shareholder">
-            <input type="radio" name="dataType" value="shareholder">
-            <span class="radio-icon">🏢</span><span>سهام‌داران</span>
+          <label class="check-item">
+            <input type="checkbox" class="type-check" value="shareholder">
+            <span class="check-icon">🏢</span>
+            <span>سهام‌داران</span>
           </label>
         </div>
       </div>
@@ -87,18 +90,28 @@
       <div class="toolbar">
         <div class="toolbar-right">
           <button id="btnFetch" class="btn btn-primary" onclick="fetchData()">
-            🔄 دریافت و نمایش داده
+            🔄 دریافت و ذخیره داده
+          </button>
+          <button class="btn btn-info" onclick="displayData()">
+            📊 نمایش داده
           </button>
           <span id="recordCount" class="badge">0 رکورد</span>
         </div>
         <div class="toolbar-left">
-          <button id="btnCSV" class="btn btn-success" onclick="exportCSV()" disabled>
+          <button class="btn btn-success" onclick="exportCSV()" id="btnCSV" disabled>
             📄 CSV
           </button>
-          <button id="btnExcel" class="btn btn-success" onclick="exportExcel()" disabled>
+          <button class="btn btn-success" onclick="exportExcel()" id="btnExcel" disabled>
             📊 Excel
           </button>
         </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="price" onclick="switchTab('price')" style="display:none">📈 قیمت</button>
+        <button class="tab-btn" data-tab="client" onclick="switchTab('client')" style="display:none">👥 حقیقی/حقوقی</button>
+        <button class="tab-btn" data-tab="shareholder" onclick="switchTab('shareholder')" style="display:none">🏢 سهامداران</button>
       </div>
 
       <div class="table-container">
@@ -109,9 +122,10 @@
         <div id="emptyState" class="empty-state">
           <span class="empty-icon">📊</span>
           <h3>داده‌ای نمایش داده نشده</h3>
-          <p>۱. ابتدا لیست نمادها رو دریافت کنید</p>
-          <p>۲. نمادهای مورد نظر رو انتخاب کنید</p>
-          <p>۳. دکمه دریافت و نمایش داده رو بزنید</p>
+          <p>۱. لیست نمادها رو دریافت کنید</p>
+          <p>۲. نوع داده و نمادها رو انتخاب کنید</p>
+          <p>۳. دریافت و ذخیره داده رو بزنید</p>
+          <p>۴. نمایش داده رو بزنید</p>
         </div>
       </div>
     </main>

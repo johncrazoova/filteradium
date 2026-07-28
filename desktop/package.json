@@ -1,15 +1,15 @@
 {
-  "name": "filteradium-exporter",
-  "version": "1.0.0",
-  "description": "TSETMC Data Exporter for Filteradium",
+  "name": "filteradium-ex-client",
+  "version": "1.1.0",
+  "description": "FilteradiumExClient - استخراج اطلاعات بورس ایران",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win portable"
   },
   "build": {
-    "appId": "com.filteradium.exporter",
-    "productName": "Filteradium",
+    "appId": "com.filteradium.exclient",
+    "productName": "FilteradiumExClient",
     "win": {
       "target": "portable",
       "icon": "../icon-512.png"
@@ -19,14 +19,7 @@
       "preload.js",
       "index.html",
       "styles.css",
-      "renderer.js",
-      "../data/filteradium.db"
-    ],
-    "extraResources": [
-      {
-        "from": "../data/filteradium.db",
-        "to": "data/filteradium.db"
-      }
+      "renderer.js"
     ]
   },
   "dependencies": {
