@@ -98,14 +98,6 @@ function registerGatewayIPC(gw) {
       return { ok: false, data: null, error: error.message, request: { provider: '', url: '', retries: 0, duration: 0, cached: false } };
     }
   });
-
-  ipcMain.handle('gateway:health', async (event, providerName) => {
-    try {
-      return await gw.healthCheck(providerName);
-    } catch (error) {
-      return { healthy: false, error: error.message };
-    }
-  });
 }
 
 // ========== Diagnostics ==========
