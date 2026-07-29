@@ -84,7 +84,8 @@ async function testConnection() {
   btn.disabled = true;
   btn.innerHTML = '⏳ در حال تست...';
   try {
-    await window.api.request('market-state');
+    const result = await window.api.request('market-state');
+    if (!result.ok) throw new Error(result.error);
     alert('✅ اتصال برقرار است!');
   } catch (e) {
     alert('❌ اتصال برقرار نشد:\n' + e.message);
@@ -99,7 +100,9 @@ async function fetchAllStocks() {
   const btn = document.getElementById('btnFetchStocks');
   btn.disabled = true; btn.innerHTML = '⏳ دریافت...';
   try {
-    const data = await window.api.request('market-watch', { marketId: 1, type: 0 });
+    const result = await window.api.request('market-watch', { marketId: 1, type: 0 });
+    if (!result.ok) throw new Error(result.error);
+    const data = result.data;
     if (!data?.closingPriceAll) throw new Error('داده‌ای دریافت نشد');
     const r = await window.api.saveStocks(data.closingPriceAll);
     alert(`✅ ${r.count} نماد دریافت شد`);
@@ -125,20 +128,20 @@ async function fetchData() {
 
     if (types.includes('price')) {
       try {
-        const data = await window.api.request('price-history', { insCode: code });
-        if (data?.closingPriceHistory) { await window.api.savePriceHistory({ insCode: code, data: data.closingPriceHistory }); fetched.price++; }
+        const result = await window.api.request('price-history', { insCode: code });
+        if (result.ok && result.data?.closingPriceHistory) { await window.api.savePriceHistory({ insCode: code, data: result.data.closingPriceHistory }); fetched.price++; }
       } catch (e) {}
     }
     if (types.includes('client')) {
       try {
-        const data = await window.api.request('client-type', { insCode: code, dayOrTotal: 0 });
-        if (data) { await window.api.saveClientType({ insCode: code, data }); fetched.client++; }
+        const result = await window.api.request('client-type', { insCode: code, dayOrTotal: 0 });
+        if (result.ok && result.data) { await window.api.saveClientType({ insCode: code, data: result.data }); fetched.client++; }
       } catch (e) {}
     }
     if (types.includes('shareholder')) {
       try {
-        const data = await window.api.request('shareholders', { insCode: code });
-        if (data) { await window.api.saveShareholders({ insCode: code, data }); fetched.shareholder++; }
+        const result = await window.api.request('shareholders', { insCode: code });
+        if (result.ok && result.data) { await window.api.saveShareholders({ insCode: code, data: result.data }); fetched.shareholder++; }
       } catch (e) {}
     }
     await new Promise(r => setTimeout(r, 200));
