@@ -99,7 +99,7 @@ async function fetchAllStocks() {
   const btn = document.getElementById('btnFetchStocks');
   btn.disabled = true; btn.innerHTML = '⏳ دریافت...';
   try {
-    const data = await apiFetch('/api/ClosingPrice/GetMarketWatch/1/0');
+    const data = await window.api.request('market-watch', { marketId: 1, type: 0 });
     if (!data?.closingPriceAll) throw new Error('داده‌ای دریافت نشد');
     const r = await window.api.saveStocks(data.closingPriceAll);
     alert(`✅ ${r.count} نماد دریافت شد`);
@@ -125,19 +125,19 @@ async function fetchData() {
 
     if (types.includes('price')) {
       try {
-        const data = await apiFetch(`/api/ClosingPrice/GetClosingPriceHistory/${code}`);
+        const data = await window.api.request('price-history', { insCode: code });
         if (data?.closingPriceHistory) { await window.api.savePriceHistory({ insCode: code, data: data.closingPriceHistory }); fetched.price++; }
       } catch (e) {}
     }
     if (types.includes('client')) {
       try {
-        const data = await apiFetch(`/api/ClientType/GetClientType/${code}/0`);
+        const data = await window.api.request('client-type', { insCode: code, dayOrTotal: 0 });
         if (data) { await window.api.saveClientType({ insCode: code, data }); fetched.client++; }
       } catch (e) {}
     }
     if (types.includes('shareholder')) {
       try {
-        const data = await apiFetch(`/api/Shareholder/GetInstrumentShareholders/${code}`);
+        const data = await window.api.request('shareholders', { insCode: code });
         if (data) { await window.api.saveShareholders({ insCode: code, data }); fetched.shareholder++; }
       } catch (e) {}
     }
