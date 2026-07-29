@@ -4,6 +4,150 @@ const Database = require('better-sqlite3');
 const XLSX = require('xlsx');
 const fs = require('fs');
 
+// ========== Gateway (Singleton) ==========
+const { createDefaultGateway } = require('./gateway');
+let gateway = null;
+
+function initGateway() {
+  if (gateway) return gateway;
+
+  console.log('[Gateway] Initializing...');
+
+  // Validate prerequisites
+  const { ACTION_MAP } = require('./gateway/actions');
+  const { TsetmcProvider } = require('./gateway/providers');
+
+  if (!ACTION_MAP || Object.keys(ACTION_MAP).length === 0) {
+    throw new Error('[Gateway] FATAL: ACTION_MAP is empty or missing');
+  }
+  console.log(`[Gateway] ✓ Action Registry loaded: ${Object.keys(ACTION_MAP).length} actions`);
+
+  // Create gateway
+  gateway = createDefaultGateway({ verbose: true });
+  console.log('[Gateway] ✓ Gateway created');
+
+  // Validate provider
+  if (!gateway.providers.tsetmc) {
+    throw new Error('[Gateway] FATAL: TsetmcProvider not registered');
+  }
+  console.log('[Gateway] ✓ TsetmcProvider registered');
+
+  // Validate middleware pipeline
+  if (!gateway.middlewares || gateway.middlewares.length === 0) {
+    throw new Error('[Gateway] FATAL: Middleware pipeline is empty');
+  }
+  console.log(`[Gateway] ✓ Middleware pipeline: ${gateway.middlewares.length} middlewares`);
+
+  // Register event listeners
+  registerEventListeners(gateway);
+
+  // Register IPC
+  registerGatewayIPC(gateway);
+
+  // Add diagnostics method
+  gateway.diagnostics = () => getDiagnostics(gateway);
+
+  console.log('[Gateway] ✓ IPC registered');
+  console.log('[Gateway] ✓ Initialization complete');
+
+  return gateway;
+}
+
+// ========== Event Logging ==========
+function registerEventListeners(gw) {
+  gw.on('request:start', ({ action, provider }) => {
+    console.log(`[Gateway:Event] → request:start | ${action} | provider: ${provider}`);
+  });
+
+  gw.on('request:success', ({ action, provider, duration, cached }) => {
+    const cache = cached ? ' [CACHED]' : '';
+    console.log(`[Gateway:Event] ✓ request:success | ${action} | ${duration}ms${cache}`);
+  });
+
+  gw.on('request:error', ({ action, provider, duration, error }) => {
+    console.log(`[Gateway:Event] ✗ request:error | ${action} | ${duration}ms | ${error}`);
+  });
+
+  gw.on('request:retry', ({ action, attempt, delay, error }) => {
+    console.log(`[Gateway:Event] ↻ request:retry | ${action} | attempt ${attempt} | ${delay}ms | ${error}`);
+  });
+
+  gw.on('request:cached', ({ action }) => {
+    console.log(`[Gateway:Event] ◆ request:cached | ${action}`);
+  });
+}
+
+// ========== IPC Registration ==========
+function registerGatewayIPC(gw) {
+  ipcMain.handle('gateway:request', async (event, action, params = {}) => {
+    try {
+      // Validate action exists
+      if (!action || typeof action !== 'string') {
+        return { ok: false, data: null, error: 'Invalid action: must be a string', request: { provider: '', url: '', retries: 0, duration: 0, cached: false } };
+      }
+
+      // Validate params
+      if (params && typeof params !== 'object') {
+        return { ok: false, data: null, error: 'Invalid params: must be an object', request: { provider: '', url: '', retries: 0, duration: 0, cached: false } };
+      }
+
+      const result = await gw.request(action, params || {});
+      return result.toJSON();
+    } catch (error) {
+      console.error(`[Gateway:IPC] Error: ${error.message}`);
+      return { ok: false, data: null, error: error.message, request: { provider: '', url: '', retries: 0, duration: 0, cached: false } };
+    }
+  });
+
+  ipcMain.handle('gateway:health', async (event, providerName) => {
+    try {
+      return await gw.healthCheck(providerName);
+    } catch (error) {
+      return { healthy: false, error: error.message };
+    }
+  });
+}
+
+// ========== Diagnostics ==========
+function getDiagnostics(gw) {
+  const { ACTION_MAP } = require('./gateway/actions');
+  return {
+    version: '1.0.0',
+    providerCount: Object.keys(gw.providers).length,
+    providers: Object.keys(gw.providers),
+    registeredActions: Object.keys(ACTION_MAP).length,
+    actionNames: Object.keys(ACTION_MAP),
+    middlewareOrder: gw.middlewares.map((m) => m.constructor.name),
+    cacheEnabled: gw.middlewares.some((m) => m.constructor.name === 'CacheMiddleware'),
+    retryEnabled: gw.middlewares.some((m) => m.constructor.name === 'RetryMiddleware'),
+    rateLimiterEnabled: gw.middlewares.some((m) => m.constructor.name === 'RateLimiterMiddleware'),
+    ipcRegistered: true,
+    defaultProvider: gw._defaultProvider,
+  };
+}
+
+// ========== Smoke Test ==========
+async function smokeTest(gw) {
+  console.log('\n[SmokeTest] Running Gateway health check...');
+
+  try {
+    const results = await gw.healthCheck();
+    for (const [name, status] of Object.entries(results)) {
+      console.log(`[SmokeTest] Provider: ${name}`);
+      console.log(`[SmokeTest]   Healthy: ${status.healthy}`);
+      console.log(`[SmokeTest]   Latency: ${status.latency}ms`);
+      if (status.diagnostics) {
+        console.log(`[SmokeTest]   Diagnostics: DNS=${status.diagnostics.dns} TCP=${status.diagnostics.tcp} TLS=${status.diagnostics.tls} HTTP=${status.diagnostics.http} JSON=${status.diagnostics.json}`);
+      }
+    }
+  } catch (e) {
+    console.log(`[SmokeTest] Health check failed: ${e.message}`);
+  }
+
+  console.log('[SmokeTest] Done\n');
+}
+
+// ========== Database ==========
 let mainWindow;
 let db;
 
@@ -38,7 +182,7 @@ function initDatabase() {
   `);
 }
 
-// ========== IPC Handlers ==========
+// ========== IPC Handlers (Existing — unchanged) ==========
 
 ipcMain.handle('get-stocks', () => db.prepare('SELECT * FROM stocks ORDER BY symbol').all());
 ipcMain.handle('get-sectors', () => db.prepare('SELECT DISTINCT sector FROM stocks WHERE sector IS NOT NULL ORDER BY sector').all());
@@ -56,7 +200,7 @@ ipcMain.handle('save-stocks', (event, stocks) => {
      first_price, yesterday_price, high_price, low_price, volume, value,
      upper_limit, lower_limit, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`);
-  
+
   const tx = db.transaction((list) => {
     for (const s of list) {
       insert.run(s.insCode, s.lVal18AFC, s.lVal18, s.cSecVal, s.flow,
@@ -73,7 +217,7 @@ ipcMain.handle('save-price-history', (event, { insCode, data }) => {
   const ins = db.prepare(`INSERT OR REPLACE INTO price_history
     (ins_code, date, open, high, low, close, last, volume, value, change, change_pct)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-  
+
   const tx = db.transaction((items) => {
     for (const h of items) {
       const d = String(h.dEven);
@@ -161,6 +305,7 @@ ipcMain.handle('export-excel-multi', async (event, { sheets, filename }) => {
   return { success: false };
 });
 
+// ========== Window ==========
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1100, height: 750,
@@ -172,5 +317,15 @@ function createWindow() {
   mainWindow.setMenuBarVisibility(false);
 }
 
-app.whenReady().then(() => { initDatabase(); createWindow(); });
-app.on('window-all-closed', () => { if (db) db.close(); app.quit(); });
+// ========== App Lifecycle ==========
+app.whenReady().then(async () => {
+  initDatabase();
+  initGateway();
+  await smokeTest(gateway);
+  createWindow();
+});
+
+app.on('window-all-closed', () => {
+  if (db) db.close();
+  app.quit();
+});

@@ -1,6 +1,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
+  // ========== Gateway (New) ==========
+  request: (action, params) => ipcRenderer.invoke('gateway:request', action, params),
+
+  // ========== Database (Existing — unchanged) ==========
   getStocks: () => ipcRenderer.invoke('get-stocks'),
   getSectors: () => ipcRenderer.invoke('get-sectors'),
   getStats: () => ipcRenderer.invoke('get-stats'),
