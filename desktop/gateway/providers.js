@@ -6,10 +6,11 @@
  *   async healthCheck() → { healthy, provider, latency, diagnostics }
  *   buildUrl(path, params) → string
  *   parse(responseText) → Object
+ *
+ * Transport: Electron net module (Chromium Network Stack)
  */
 
-const https = require('https');
-const http = require('http');
+const { net } = require('electron');
 const { URL } = require('url');
 
 // ─── Base Provider (abstract) ──────────────────────────────
@@ -34,7 +35,6 @@ class BaseProvider {
   }
 
   buildUrl(path, params) {
-    // Replace {param} placeholders
     let resolved = path;
     for (const [key, value] of Object.entries(params)) {
       resolved = resolved.replace(`{${key}}`, encodeURIComponent(value));
@@ -50,52 +50,112 @@ class BaseProvider {
     }
   }
 
-  /** Low-level fetch via Node.js http/https */
+  /**
+   * Low-level fetch via Electron net module (Chromium Network Stack)
+   *
+   * Features inherited from Chromium:
+   * - Auto redirect following
+   * - Cookie handling
+ * - HTTP/2 support
+   * - Compression (gzip/br)
+   * - TLS 1.2/1.3
+   * - System proxy
+   * - Certificate handling
+   */
   async _httpFetch(url, options = {}) {
     return new Promise((resolve, reject) => {
       const parsedUrl = new URL(url);
-      const client = parsedUrl.protocol === 'https:' ? https : http;
+      const method = options.method || 'GET';
 
-      const reqOptions = {
-        hostname: parsedUrl.hostname,
-        port: parsedUrl.port,
-        path: parsedUrl.pathname + parsedUrl.search,
-        method: options.method || 'GET',
-        headers: { ...this.config.headers, ...options.headers },
-        timeout: this.config.timeout,
-      };
+      const headers = { ...this.config.headers, ...options.headers };
 
+      // Debug logging
+      if (process.env.GATEWAY_DEBUG) {
+        console.log(`[Net] → ${method} ${url}`);
+        console.log(`[Net] Headers:`, JSON.stringify(headers, null, 2));
+      }
+
+      const request = net.request({
+        method,
+        url,
+        headers,
+      });
+
+      // Set timeout
       const timer = setTimeout(() => {
-        req.destroy();
+        request.abort();
         reject(new Error(`Request timeout: ${url}`));
       }, this.config.timeout);
 
-      const req = client.request(reqOptions, (res) => {
+      // Track redirect events
+      let redirectCount = 0;
+      let finalUrl = url;
+
+      request.on('redirect', (status, method, redirectUrl, responseHeaders) => {
+        redirectCount++;
+        finalUrl = redirectUrl;
+
+        if (process.env.GATEWAY_DEBUG) {
+          console.log(`[Net] ↻ Redirect #${redirectCount}: ${status} → ${redirectUrl}`);
+          console.log(`[Net] Response Headers:`, JSON.stringify(responseHeaders, null, 2));
+        }
+
+        // Follow redirect (Electron net auto-follows by default)
+        request.followRedirect();
+      });
+
+      request.on('response', (response) => {
         let body = '';
-        res.on('data', (chunk) => (body += chunk));
-        res.on('end', () => {
+
+        response.on('data', (chunk) => {
+          body += chunk.toString();
+        });
+
+        response.on('end', () => {
           clearTimeout(timer);
+
+          const statusCode = response.statusCode;
+          const responseHeaders = response.headers;
+
+          // Debug logging
+          if (process.env.GATEWAY_DEBUG) {
+            console.log(`[Net] ← ${statusCode} ${finalUrl}`);
+            console.log(`[Net] Redirects: ${redirectCount}`);
+            console.log(`[Net] Response Headers:`, JSON.stringify(responseHeaders, null, 2));
+            console.log(`[Net] Body length: ${body.length}`);
+            if (body.length < 500) {
+              console.log(`[Net] Body: ${body}`);
+            }
+          }
+
           resolve({
-            status: res.statusCode,
-            headers: res.headers,
+            status: statusCode,
+            headers: responseHeaders,
             body,
-            ok: res.statusCode >= 200 && res.statusCode < 300,
+            ok: statusCode >= 200 && statusCode < 300,
           });
         });
       });
 
-      req.on('error', (e) => {
+      request.on('error', (error) => {
         clearTimeout(timer);
-        reject(e);
+
+        if (process.env.GATEWAY_DEBUG) {
+          console.log(`[Net] ✗ Error: ${error.code} - ${error.message}`);
+          console.log(`[Net] URL: ${url}`);
+          console.log(`[Net] Redirects before error: ${redirectCount}`);
+        }
+
+        reject(error);
       });
 
-      req.on('timeout', () => {
+      request.on('abort', () => {
         clearTimeout(timer);
-        req.destroy();
-        reject(new Error(`Socket timeout: ${url}`));
+        reject(new Error(`Request aborted: ${url}`));
       });
 
-      req.end();
+      // End request (for GET, no body)
+      request.end();
     });
   }
 }
@@ -142,7 +202,6 @@ class TsetmcProvider extends BaseProvider {
     const diagnostics = { dns: false, tcp: false, tls: false, http: false, json: false };
 
     try {
-      // Try the simplest endpoint
       const url = this.config.baseUrl + '/api/MarketData/GetMarketState';
       diagnostics.dns = true;
       diagnostics.tcp = true;
