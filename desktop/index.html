@@ -6,6 +6,25 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- ═══ Renderer Error Trap ═══ -->
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      console.error('[Renderer:error]', { msg, url, line, col, error });
+      return false;
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+      console.error('[Renderer:unhandledrejection]', e.reason);
+    });
+    const origError = console.error;
+    console.error = function() {
+      origError.apply(console, ['[Renderer:console.error]', ...arguments]);
+    };
+    const origWarn = console.warn;
+    console.warn = function() {
+      origWarn.apply(console, ['[Renderer:console.warn]', ...arguments]);
+    };
+  </script>
+
   <header class="header">
     <div class="header-right">
       <span class="logo">F</span>

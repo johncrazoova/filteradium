@@ -83,11 +83,14 @@ async function testConnection() {
   const btn = document.getElementById('btnTest');
   btn.disabled = true;
   btn.innerHTML = '⏳ در حال تست...';
+  console.log('[Renderer] testConnection: calling window.api.request("market-state")');
   try {
     const result = await window.api.request('market-state');
+    console.log('[Renderer] testConnection result:', JSON.stringify(result).substring(0, 500));
     if (!result.ok) throw new Error(result.error);
     alert('✅ اتصال برقرار است!');
   } catch (e) {
+    console.error('[Renderer] testConnection error:', e);
     alert('❌ اتصال برقرار نشد:\n' + e.message);
   } finally {
     btn.disabled = false;

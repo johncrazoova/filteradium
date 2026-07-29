@@ -80,21 +80,36 @@ function registerEventListeners(gw) {
 // ========== IPC Registration ==========
 function registerGatewayIPC(gw) {
   ipcMain.handle('gateway:request', async (event, action, params = {}) => {
+    const ipcStart = Date.now();
+    console.log(`[IPC] → Received: action=${action} params=${JSON.stringify(params)}`);
+
     try {
       // Validate action exists
       if (!action || typeof action !== 'string') {
+        console.log(`[IPC] ✗ Invalid action`);
         return { ok: false, data: null, error: 'Invalid action: must be a string', request: { provider: '', url: '', retries: 0, duration: 0, cached: false } };
       }
 
       // Validate params
       if (params && typeof params !== 'object') {
+        console.log(`[IPC] ✗ Invalid params`);
         return { ok: false, data: null, error: 'Invalid params: must be an object', request: { provider: '', url: '', retries: 0, duration: 0, cached: false } };
       }
 
+      console.log(`[IPC] → Calling Gateway.request('${action}')`);
       const result = await gw.request(action, params || {});
-      return result.toJSON();
+      const json = result.toJSON();
+      const duration = Date.now() - ipcStart;
+
+      console.log(`[IPC] ← Returned: ok=${json.ok} data=${json.data ? 'Object' : 'null'} error=${json.error || 'none'} duration=${duration}ms`);
+      if (json.data) {
+        console.log(`[IPC] Data preview:`, JSON.stringify(json.data).substring(0, 300));
+      }
+
+      return json;
     } catch (error) {
-      console.error(`[Gateway:IPC] Error: ${error.message}`);
+      const duration = Date.now() - ipcStart;
+      console.error(`[IPC] ✗ Error: ${error.message} (${duration}ms)`);
       return { ok: false, data: null, error: error.message, request: { provider: '', url: '', retries: 0, duration: 0, cached: false } };
     }
   });

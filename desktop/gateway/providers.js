@@ -1,17 +1,18 @@
 /**
  * Providers — each provider encapsulates communication with one data source.
  *
- * Interface:
- *   async request(actionDef, params) → Object (parsed JSON)
- *   async healthCheck() → { healthy, provider, latency, diagnostics }
- *   buildUrl(path, params) → string
- *   parse(responseText) → Object
- *
  * Transport: Electron net module (Chromium Network Stack)
+ * Debug: Set GATEWAY_DEBUG=1 for full logging
  */
 
 const { net } = require('electron');
 const { URL } = require('url');
+
+const DEBUG = process.env.GATEWAY_DEBUG === '1';
+
+function log(tag, ...args) {
+  if (DEBUG) console.log(`[${tag}]`, ...args);
+}
 
 // ─── Base Provider (abstract) ──────────────────────────────
 class BaseProvider {
@@ -51,110 +52,91 @@ class BaseProvider {
   }
 
   /**
-   * Low-level fetch via Electron net module (Chromium Network Stack)
-   *
-   * Features inherited from Chromium:
-   * - Auto redirect following
-   * - Cookie handling
- * - HTTP/2 support
-   * - Compression (gzip/br)
-   * - TLS 1.2/1.3
-   * - System proxy
-   * - Certificate handling
+   * Low-level fetch via Electron net module
    */
   async _httpFetch(url, options = {}) {
     return new Promise((resolve, reject) => {
-      const parsedUrl = new URL(url);
       const method = options.method || 'GET';
-
       const headers = { ...this.config.headers, ...options.headers };
 
-      // Debug logging
-      if (process.env.GATEWAY_DEBUG) {
-        console.log(`[Net] → ${method} ${url}`);
-        console.log(`[Net] Headers:`, JSON.stringify(headers, null, 2));
-      }
+      log('NET', `→ ${method} ${url}`);
+      log('NET', `Headers:`, JSON.stringify(headers, null, 2));
 
-      const request = net.request({
-        method,
-        url,
-        headers,
-      });
+      const request = net.request({ method, url, headers });
 
-      // Set timeout
+      // Timeout
       const timer = setTimeout(() => {
         request.abort();
         reject(new Error(`Request timeout: ${url}`));
       }, this.config.timeout);
 
-      // Track redirect events
+      // Track redirects
       let redirectCount = 0;
       let finalUrl = url;
+
+      // ─── Electron net Events ──────────────────────────
+      request.on('login', (authInfo, callback) => {
+        log('NET', `🔐 login event:`, authInfo);
+        callback(); // Cancel auth
+      });
 
       request.on('redirect', (status, method, redirectUrl, responseHeaders) => {
         redirectCount++;
         finalUrl = redirectUrl;
-
-        if (process.env.GATEWAY_DEBUG) {
-          console.log(`[Net] ↻ Redirect #${redirectCount}: ${status} → ${redirectUrl}`);
-          console.log(`[Net] Response Headers:`, JSON.stringify(responseHeaders, null, 2));
-        }
-
-        // Follow redirect (Electron net auto-follows by default)
+        log('NET', `↻ Redirect #${redirectCount}: ${status} ${method}`);
+        log('NET', `   Old URL: ${url}`);
+        log('NET', `   New URL: ${redirectUrl}`);
+        log('NET', `   Headers:`, JSON.stringify(responseHeaders, null, 2));
         request.followRedirect();
       });
 
       request.on('response', (response) => {
-        let body = '';
+        log('NET', `← Response: ${response.statusCode}`);
+        log('NET', `Headers:`, JSON.stringify(response.headers, null, 2));
 
-        response.on('data', (chunk) => {
-          body += chunk.toString();
-        });
+        let body = '';
+        response.on('data', (chunk) => { body += chunk.toString(); });
 
         response.on('end', () => {
           clearTimeout(timer);
-
-          const statusCode = response.statusCode;
-          const responseHeaders = response.headers;
-
-          // Debug logging
-          if (process.env.GATEWAY_DEBUG) {
-            console.log(`[Net] ← ${statusCode} ${finalUrl}`);
-            console.log(`[Net] Redirects: ${redirectCount}`);
-            console.log(`[Net] Response Headers:`, JSON.stringify(responseHeaders, null, 2));
-            console.log(`[Net] Body length: ${body.length}`);
-            if (body.length < 500) {
-              console.log(`[Net] Body: ${body}`);
-            }
+          log('NET', `Body length: ${body.length}`);
+          if (body.length > 0 && body.length < 500) {
+            log('NET', `Body: ${body}`);
+          } else if (body.length >= 500) {
+            log('NET', `Body preview: ${body.substring(0, 300)}...`);
           }
 
           resolve({
-            status: statusCode,
-            headers: responseHeaders,
+            status: response.statusCode,
+            headers: response.headers,
             body,
-            ok: statusCode >= 200 && statusCode < 300,
+            ok: response.statusCode >= 200 && response.statusCode < 300,
           });
         });
       });
 
       request.on('error', (error) => {
         clearTimeout(timer);
-
-        if (process.env.GATEWAY_DEBUG) {
-          console.log(`[Net] ✗ Error: ${error.code} - ${error.message}`);
-          console.log(`[Net] URL: ${url}`);
-          console.log(`[Net] Redirects before error: ${redirectCount}`);
-        }
-
+        log('NET', `✗ Error: ${error.code} - ${error.message}`);
+        log('NET', `URL: ${url}`);
+        log('NET', `Redirects before error: ${redirectCount}`);
         reject(error);
       });
 
       request.on('abort', () => {
         clearTimeout(timer);
+        log('NET', `⚠ Aborted: ${url}`);
         reject(new Error(`Request aborted: ${url}`));
       });
 
-      // End request (for GET, no body)
+      request.on('close', () => {
+        log('NET', `Close event: ${url}`);
+      });
+
+      request.on('finish', () => {
+        log('NET', `Finish event: ${url}`);
+      });
+
       request.end();
     });
   }
@@ -181,17 +163,29 @@ class TsetmcProvider extends BaseProvider {
     const path = actionDef.path;
     const urls = [this.config.baseUrl, ...this.config.fallbackUrls];
 
+    log('PROVIDER', `request: ${actionDef.path}`);
+    log('PROVIDER', `params:`, JSON.stringify(params));
+
     let lastError;
-    for (const baseUrl of urls) {
+    for (let i = 0; i < urls.length; i++) {
+      const baseUrl = urls[i];
       const url = this._buildUrl(baseUrl, path, params);
+      log('PROVIDER', `Trying [${i+1}/${urls.length}]: ${url}`);
+
       try {
         const response = await this._httpFetch(url);
+        log('PROVIDER', `Response: ${response.status} (body: ${response.body.length})`);
+
         if (response.ok && response.body) {
-          return this.parse(response.body);
+          const parsed = this.parse(response.body);
+          log('PROVIDER', `✓ Success from: ${url}`);
+          return parsed;
         }
         lastError = new Error(`HTTP ${response.status}: ${url}`);
+        log('PROVIDER', `✗ Failed: ${lastError.message}`);
       } catch (e) {
         lastError = e;
+        log('PROVIDER', `✗ Error: ${e.message}`);
       }
     }
     throw lastError || new Error('All providers failed');
@@ -221,13 +215,7 @@ class TsetmcProvider extends BaseProvider {
     const latency = Date.now() - start;
     const healthy = diagnostics.http && diagnostics.json;
 
-    return {
-      healthy,
-      provider: this.name,
-      latency,
-      checkedAt: new Date().toISOString(),
-      diagnostics,
-    };
+    return { healthy, provider: this.name, latency, checkedAt: new Date().toISOString(), diagnostics };
   }
 
   _buildUrl(baseUrl, path, params) {
