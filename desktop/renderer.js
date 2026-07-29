@@ -84,7 +84,7 @@ async function testConnection() {
   btn.disabled = true;
   btn.innerHTML = '⏳ در حال تست...';
   try {
-    await apiFetch('/api/MarketData/GetMarketState');
+    await window.api.request('market-state');
     alert('✅ اتصال برقرار است!');
   } catch (e) {
     alert('❌ اتصال برقرار نشد:\n' + e.message);
@@ -285,4 +285,61 @@ async function exportExcel() {
   if (!sheets.length) { alert('داده‌ای برای خروجی نیست'); return; }
   const r = await window.api.exportExcelMulti({ sheets, filename: `filteradium_${new Date().toISOString().split('T')[0]}.xlsx` });
   if (r.success) alert(`✅ ذخیره شد:\n${r.path}`);
+}
+
+// ========== TEMPORARY DIAGNOSTICS ==========
+async function runDiagnostics() {
+  const btn = document.getElementById('btnDiag');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ در حال عیب‌یابی...';
+
+  const results = [];
+
+  const testUrls = [
+    { name: 'Google Favicon', url: 'https://www.google.com/favicon.ico', type: 'binary' },
+    { name: 'HTTPBin GET', url: 'https://httpbin.org/get', type: 'json' },
+    { name: 'JSONPlaceholder', url: 'https://jsonplaceholder.typicode.com/posts/1', type: 'json' },
+    { name: 'TSETMC CDN (HTTPS)', url: 'https://cdn.tsetmc.com/api/MarketData/GetMarketState', type: 'json' },
+    { name: 'TSETMC CDN (HTTP)', url: 'http://cdn.tsetmc.com/api/MarketData/GetMarketState', type: 'json' },
+    { name: 'TSETMC Main (HTTPS)', url: 'https://tsetmc.com/api/MarketData/GetMarketState', type: 'json' },
+  ];
+
+  for (const test of testUrls) {
+    const start = Date.now();
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(test.url, { method: 'GET', signal: controller.signal, headers: { 'Accept': 'application/json' } });
+      clearTimeout(timeoutId);
+      const elapsed = Date.now() - start;
+      let bodyPreview = '', responseLength = 0;
+      if (test.type === 'json') { const text = await res.text(); responseLength = text.length; bodyPreview = text.substring(0, 200); }
+      else { const blob = await res.blob(); responseLength = blob.size; bodyPreview = `[Binary: ${blob.size} bytes]`; }
+      results.push({ name: test.name, url: test.url, success: res.ok, status: res.status, error: '', responseLength, bodyPreview, elapsed: `${elapsed}ms` });
+    } catch (e) {
+      results.push({ name: test.name, url: test.url, success: false, status: 'N/A', error: `${e.name}: ${e.message}`, responseLength: 0, bodyPreview: '', elapsed: `${Date.now() - start}ms` });
+    }
+  }
+
+  let report = '🔍 NETWORK DIAGNOSTICS REPORT\n';
+  report += '═'.repeat(50) + '\n\n';
+  for (const r of results) {
+    report += `${r.success ? '✅' : '❌'} ${r.name}\n`;
+    report += `   URL: ${r.url}\n`;
+    report += `   Status: ${r.status} | Time: ${r.elapsed} | Size: ${r.responseLength}B\n`;
+    if (r.error) report += `   Error: ${r.error}\n`;
+    if (r.bodyPreview) report += `   Body: ${r.bodyPreview}\n`;
+    report += '\n';
+  }
+  report += '═'.repeat(50) + '\n';
+  report += `📍 Location: ${window.location.href}\n`;
+  report += `🔌 Protocol: ${window.location.protocol}\n`;
+  report += `🌐 Online: ${navigator.onLine}\n`;
+  report += `📱 UA: ${navigator.userAgent}\n`;
+  report += '═'.repeat(50) + '\n';
+
+  console.log(report);
+  alert(report);
+  btn.disabled = false;
+  btn.innerHTML = '🔍 عیب‌یابی شبکه';
 }
